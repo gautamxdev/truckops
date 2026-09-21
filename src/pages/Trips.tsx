@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
+import { AlertTriangle } from 'lucide-react'
 import StatusBadge from '../components/StatusBadge'
 import { driverById, formatInr, trips, truckById } from '../data/mock'
-import type { TripStatus } from '../types'
+import type { Trip, TripStatus } from '../types'
 
 const STATUS_FILTERS: { id: 'all' | TripStatus; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -11,7 +12,18 @@ const STATUS_FILTERS: { id: 'all' | TripStatus; label: string }[] = [
   { id: 'settled', label: 'Settled' },
 ]
 
-function margin(trip: (typeof trips)[0]) {
+function todayIso() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function isEtaOverdue(trip: Trip, today = todayIso()) {
+  return (
+    (trip.status === 'in_transit' || trip.status === 'planned') &&
+    trip.etaDate < today
+  )
+}
+
+function margin(trip: Trip) {
   return trip.freightInr - trip.dieselInr - trip.tollInr
 }
 
@@ -23,6 +35,11 @@ export default function Trips() {
     return trips.filter((t) => t.status === statusFilter)
   }, [statusFilter])
 
+  const overdueCount = useMemo(
+    () => trips.filter((t) => isEtaOverdue(t)).length,
+    [],
+  )
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -30,6 +47,11 @@ export default function Trips() {
           <h1 className="font-display text-2xl font-bold text-slate-900">Trips</h1>
           <p className="text-sm text-slate-500 mt-1">
             Lanes, freight, diesel ₹ & FASTag — trip P&L at a glance
+            {overdueCount > 0 ? (
+              <span className="ml-1 text-red-600 font-medium">
+                · {overdueCount} overdue ETA{overdueCount === 1 ? '' : 's'}
+              </span>
+            ) : null}
           </p>
         </div>
         <button
@@ -75,10 +97,13 @@ export default function Trips() {
             const truck = truckById(trip.truckId)
             const driver = driverById(trip.driverId)
             const m = margin(trip)
+            const overdue = isEtaOverdue(trip)
             return (
               <div
                 key={trip.id}
-                className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+                className={`rounded-xl border bg-white p-5 shadow-sm ${
+                  overdue ? 'border-red-200' : 'border-slate-200'
+                }`}
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
@@ -87,12 +112,25 @@ export default function Trips() {
                         {trip.origin} → {trip.destination}
                       </h2>
                       <StatusBadge status={trip.status} />
+                      {overdue ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-800">
+                          <AlertTriangle className="h-3 w-3" aria-hidden="true" />
+                          ETA overdue
+                        </span>
+                      ) : null}
                     </div>
                     <p className="text-sm text-slate-500 mt-1">
                       {trip.cargo} · {trip.distanceKm} km · {truck?.plate} · {driver?.name}
                     </p>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <p
+                      className={`text-xs mt-1 ${
+                        overdue ? 'text-red-700 font-medium' : 'text-slate-400'
+                      }`}
+                    >
                       Dep {trip.departureDate} · ETA {trip.etaDate}
+                      {overdue ? (
+                        <span className="sr-only"> (ETA overdue)</span>
+                      ) : null}
                     </p>
                   </div>
                   <div className="text-right">
