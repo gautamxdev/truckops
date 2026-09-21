@@ -10,12 +10,98 @@ import {
   truckById,
   driverById,
 } from '../data/mock'
+import type { Truck as FleetTruck } from '../types'
+
+const SERVICE_INTERVAL_KM = 10000
+
+function todayIso() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function isExpired(isoDate: string, today = todayIso()) {
+  return isoDate < today
+}
+
+function isDueSoon(isoDate: string, today = todayIso(), withinDays = 45) {
+  if (isoDate < today) return false
+  const due = new Date(`${isoDate}T00:00:00`)
+  const now = new Date(`${today}T00:00:00`)
+  const diffDays = (due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+  return diffDays <= withinDays
+}
+
+function kmSinceService(t: FleetTruck) {
+  return Math.max(0, t.odometerKm - t.lastServiceKm)
+}
+
+function needsService(t: FleetTruck) {
+  return kmSinceService(t) >= SERVICE_INTERVAL_KM
+}
+
+type DocAlert = {
+  id: string
+  plate: string
+  kind: 'fitness' | 'insurance' | 'service'
+  detail: string
+  severity: 'expired' | 'soon' | 'service'
+}
 
 export default function Dashboard() {
   const onTrip = trucks.filter((t) => t.status === 'on_trip').length
   const available = trucks.filter((t) => t.status === 'available').length
   const activeTrips = trips.filter((t) => t.status === 'in_transit' || t.status === 'planned')
-  const fitnessSoon = trucks.filter((t) => t.fitnessExpiry < '2026-10-01')
+
+  const docAlerts: DocAlert[] = []
+  for (const t of trucks) {
+    if (isExpired(t.fitnessExpiry)) {
+      docAlerts.push({
+        id: `${t.id}-fitness`,
+        plate: t.plate,
+        kind: 'fitness',
+        detail: `fitness expired ${t.fitnessExpiry}`,
+        severity: 'expired',
+      })
+    } else if (isDueSoon(t.fitnessExpiry)) {
+      docAlerts.push({
+        id: `${t.id}-fitness`,
+        plate: t.plate,
+        kind: 'fitness',
+        detail: `fitness due ${t.fitnessExpiry}`,
+        severity: 'soon',
+      })
+    }
+    if (isExpired(t.insuranceExpiry)) {
+      docAlerts.push({
+        id: `${t.id}-insurance`,
+        plate: t.plate,
+        kind: 'insurance',
+        detail: `insurance expired ${t.insuranceExpiry}`,
+        severity: 'expired',
+      })
+    } else if (isDueSoon(t.insuranceExpiry)) {
+      docAlerts.push({
+        id: `${t.id}-insurance`,
+        plate: t.plate,
+        kind: 'insurance',
+        detail: `insurance due ${t.insuranceExpiry}`,
+        severity: 'soon',
+      })
+    }
+    if (needsService(t)) {
+      docAlerts.push({
+        id: `${t.id}-service`,
+        plate: t.plate,
+        kind: 'service',
+        detail: `${kmSinceService(t).toLocaleString('en-IN')} km since service`,
+        severity: 'service',
+      })
+    }
+  }
+
+  docAlerts.sort((a, b) => {
+    const rank = { expired: 0, soon: 1, service: 2 }
+    return rank[a.severity] - rank[b.severity]
+  })
 
   return (
     <div className="space-y-6">
@@ -107,16 +193,25 @@ export default function Dashboard() {
             </dl>
           </div>
 
-          {fitnessSoon.length > 0 ? (
+          {docAlerts.length > 0 ? (
             <div className="rounded-xl border border-orange-200 bg-orange-50 p-5">
               <div className="flex items-center gap-2 text-orange-800 mb-2">
                 <AlertTriangle className="h-4 w-4" />
-                <h2 className="font-display font-semibold text-sm">Fitness / docs due soon</h2>
+                <h2 className="font-display font-semibold text-sm">
+                  Docs & service alerts
+                </h2>
               </div>
               <ul className="space-y-1.5 text-sm text-orange-900/80">
-                {fitnessSoon.map((t) => (
-                  <li key={t.id}>
-                    {t.plate} — fitness {t.fitnessExpiry}
+                {docAlerts.map((a) => (
+                  <li key={a.id}>
+                    <span
+                      className={
+                        a.severity === 'expired' ? 'font-semibold text-red-800' : undefined
+                      }
+                    >
+                      {a.plate}
+                    </span>{' '}
+                    — {a.detail}
                   </li>
                 ))}
               </ul>
