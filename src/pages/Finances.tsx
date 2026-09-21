@@ -1,6 +1,10 @@
+import { useMemo, useState } from 'react'
 import { Fuel, Receipt, Wrench, Wallet } from 'lucide-react'
 import StatCard from '../components/StatCard'
 import { expenses, financeSummary, formatInr, trips } from '../data/mock'
+import type { Expense } from '../types'
+
+type ExpenseCategory = Expense['category']
 
 const categoryIcon = {
   diesel: Fuel,
@@ -18,10 +22,31 @@ const categoryLabel = {
   other: 'Other',
 }
 
+const CATEGORY_FILTERS: { id: 'all' | ExpenseCategory; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'diesel', label: 'Diesel' },
+  { id: 'toll', label: 'Toll' },
+  { id: 'maintenance', label: 'Maintenance' },
+  { id: 'salary', label: 'Salary' },
+  { id: 'other', label: 'Other' },
+]
+
 export default function Finances() {
+  const [categoryFilter, setCategoryFilter] = useState<'all' | ExpenseCategory>('all')
+
   const settledFreight = trips
     .filter((t) => t.status === 'settled' || t.status === 'delivered')
     .reduce((s, t) => s + t.freightInr, 0)
+
+  const filteredExpenses = useMemo(() => {
+    if (categoryFilter === 'all') return expenses
+    return expenses.filter((e) => e.category === categoryFilter)
+  }, [categoryFilter])
+
+  const filteredTotal = useMemo(
+    () => filteredExpenses.reduce((s, e) => s + e.amountInr, 0),
+    [filteredExpenses],
+  )
 
   return (
     <div className="space-y-6">
@@ -86,32 +111,68 @@ export default function Finances() {
         </div>
 
         <div className="lg:col-span-3 rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-100">
-            <h2 className="font-display font-semibold text-slate-900">Recent expenses</h2>
+          <div className="px-5 py-4 border-b border-slate-100 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="font-display font-semibold text-slate-900">Recent expenses</h2>
+              <p className="text-xs text-slate-500">
+                {filteredExpenses.length} item{filteredExpenses.length === 1 ? '' : 's'} ·{' '}
+                {formatInr(filteredTotal)}
+              </p>
+            </div>
+            <div
+              className="flex flex-wrap gap-1.5"
+              role="group"
+              aria-label="Filter expenses by category"
+            >
+              {CATEGORY_FILTERS.map((f) => {
+                const active = categoryFilter === f.id
+                return (
+                  <button
+                    key={f.id}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => setCategoryFilter(f.id)}
+                    className={`rounded-full px-3 py-1.5 text-xs font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 ${
+                      active
+                        ? 'bg-slate-900 text-white'
+                        : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                )
+              })}
+            </div>
           </div>
-          <ul className="divide-y divide-slate-100">
-            {expenses.map((e) => {
-              const Icon = categoryIcon[e.category]
-              return (
-                <li key={e.id} className="px-5 py-3.5 flex items-center gap-3 justify-between">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="h-9 w-9 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
-                      <Icon className="h-4 w-4" />
+          {filteredExpenses.length === 0 ? (
+            <p className="px-5 py-10 text-center text-sm text-slate-500">
+              No expenses in this category.
+            </p>
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {filteredExpenses.map((e) => {
+                const Icon = categoryIcon[e.category]
+                return (
+                  <li key={e.id} className="px-5 py-3.5 flex items-center gap-3 justify-between">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="h-9 w-9 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-slate-900 truncate">{e.description}</p>
+                        <p className="text-xs text-slate-500">
+                          {categoryLabel[e.category]} · {e.date}
+                        </p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-slate-900 truncate">{e.description}</p>
-                      <p className="text-xs text-slate-500">
-                        {categoryLabel[e.category]} · {e.date}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="text-sm font-semibold text-slate-800 whitespace-nowrap">
-                    {formatInr(e.amountInr)}
-                  </span>
-                </li>
-              )
-            })}
-          </ul>
+                    <span className="text-sm font-semibold text-slate-800 whitespace-nowrap">
+                      {formatInr(e.amountInr)}
+                    </span>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
         </div>
       </div>
     </div>
