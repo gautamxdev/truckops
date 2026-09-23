@@ -19,6 +19,14 @@ const nav = [
   { to: '/app/finances', end: false, label: 'Finances', icon: Wallet },
 ]
 
+const PAGE_TITLES: Record<string, string> = {
+  '/app': 'Dashboard',
+  '/app/trucks': 'Trucks',
+  '/app/drivers': 'Drivers',
+  '/app/trips': 'Trips',
+  '/app/finances': 'Finances',
+}
+
 function getFocusable(root: HTMLElement): HTMLElement[] {
   const nodes = root.querySelectorAll<HTMLElement>(
     'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
@@ -35,9 +43,13 @@ export default function AppLayout() {
   const menuButtonRef = useRef<HTMLButtonElement>(null)
   const drawerPanelRef = useRef<HTMLElement>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
+  const mainRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     setMobileNavOpen(false)
+    const page = PAGE_TITLES[location.pathname] ?? 'App'
+    document.title = `${page} · TruckOps`
+    mainRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' })
   }, [location.pathname])
 
   useEffect(() => {
@@ -208,7 +220,7 @@ export default function AppLayout() {
             </div>
           </div>
         </header>
-        <main className="flex-1 p-4 sm:p-6 overflow-auto">
+        <main ref={mainRef} className="flex-1 p-4 sm:p-6 overflow-auto">
           <Outlet />
         </main>
       </div>
