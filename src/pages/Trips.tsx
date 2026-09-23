@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, Search } from 'lucide-react'
 import StatusBadge from '../components/StatusBadge'
 import { driverById, formatInr, trips, truckById } from '../data/mock'
 import type { Trip, TripStatus } from '../types'
@@ -27,11 +27,24 @@ function margin(trip: Trip) {
 
 export default function Trips() {
   const [statusFilter, setStatusFilter] = useState<'all' | TripStatus>('all')
+  const [query, setQuery] = useState('')
 
   const filtered = useMemo(() => {
-    if (statusFilter === 'all') return trips
-    return trips.filter((t) => t.status === statusFilter)
-  }, [statusFilter])
+    const q = query.trim().toLowerCase()
+    return trips.filter((t) => {
+      if (statusFilter !== 'all' && t.status !== statusFilter) return false
+      if (!q) return true
+      const truck = truckById(t.truckId)
+      const driver = driverById(t.driverId)
+      return (
+        t.origin.toLowerCase().includes(q) ||
+        t.destination.toLowerCase().includes(q) ||
+        t.cargo.toLowerCase().includes(q) ||
+        (truck?.plate.toLowerCase().includes(q) ?? false) ||
+        (driver?.name.toLowerCase().includes(q) ?? false)
+      )
+    })
+  }, [statusFilter, query])
 
   const overdueCount = useMemo(
     () => trips.filter((t) => isEtaOverdue(t)).length,
@@ -60,34 +73,53 @@ export default function Trips() {
         </button>
       </div>
 
-      <div
-        className="flex flex-wrap gap-1.5"
-        role="group"
-        aria-label="Filter by trip status"
-      >
-        {STATUS_FILTERS.map((f) => {
-          const active = statusFilter === f.id
-          return (
-            <button
-              key={f.id}
-              type="button"
-              aria-pressed={active}
-              onClick={() => setStatusFilter(f.id)}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 ${
-                active
-                  ? 'bg-slate-900 text-white'
-                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              {f.label}
-            </button>
-          )
-        })}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative w-full sm:max-w-xs">
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+            aria-hidden="true"
+          />
+          <label htmlFor="trip-search" className="sr-only">
+            Search trips by lane, cargo, plate, or driver
+          </label>
+          <input
+            id="trip-search"
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search lane, cargo, plate…"
+            className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/40"
+          />
+        </div>
+        <div
+          className="flex flex-wrap gap-1.5"
+          role="group"
+          aria-label="Filter by trip status"
+        >
+          {STATUS_FILTERS.map((f) => {
+            const active = statusFilter === f.id
+            return (
+              <button
+                key={f.id}
+                type="button"
+                aria-pressed={active}
+                onClick={() => setStatusFilter(f.id)}
+                className={`rounded-full px-3 py-1.5 text-xs font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 ${
+                  active
+                    ? 'bg-slate-900 text-white'
+                    : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                {f.label}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {filtered.length === 0 ? (
         <div className="rounded-xl border border-slate-200 bg-white px-5 py-10 text-center text-sm text-slate-500 shadow-sm">
-          No trips match this status filter.
+          No trips match this search or status filter.
         </div>
       ) : (
         <div className="space-y-3">
