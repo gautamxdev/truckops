@@ -6,6 +6,16 @@ import type { TruckStatus } from '../types'
 
 import { isDueSoon, isExpired } from '../utils/dates'
 
+const SERVICE_INTERVAL_KM = 10000
+
+function kmSinceService(odometerKm: number, lastServiceKm: number) {
+  return Math.max(0, odometerKm - lastServiceKm)
+}
+
+function needsService(odometerKm: number, lastServiceKm: number) {
+  return kmSinceService(odometerKm, lastServiceKm) >= SERVICE_INTERVAL_KM
+}
+
 const STATUS_FILTERS: { id: 'all' | TruckStatus; label: string }[] = [
   { id: 'all', label: 'All' },
   { id: 'on_trip', label: 'On trip' },
@@ -63,6 +73,11 @@ export default function Trucks() {
     })
   }, [query, statusFilter])
 
+  const serviceDueCount = useMemo(
+    () => trucks.filter((t) => needsService(t.odometerKm, t.lastServiceKm)).length,
+    [],
+  )
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -70,6 +85,11 @@ export default function Trucks() {
           <h1 className="font-display text-2xl font-bold text-slate-900">Trucks</h1>
           <p className="text-sm text-slate-500 mt-1">
             Registration, capacity, fitness & insurance across the fleet
+            {serviceDueCount > 0 ? (
+              <span className="ml-1 text-red-600 font-medium">
+                · {serviceDueCount} due for service
+              </span>
+            ) : null}
           </p>
         </div>
         <button
@@ -136,45 +156,65 @@ export default function Trucks() {
                 <th className="px-5 py-3 font-medium">Fitness</th>
                 <th className="px-5 py-3 font-medium">Insurance</th>
                 <th className="px-5 py-3 font-medium">Odometer</th>
+                <th className="px-5 py-3 font-medium">Since service</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filtered.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="px-5 py-10 text-center text-sm text-slate-500"
                   >
                     No trucks match this search or status filter.
                   </td>
                 </tr>
               ) : (
-                filtered.map((t) => (
-                  <tr key={t.id} className="hover:bg-slate-50/80">
-                    <td className="px-5 py-3.5 font-semibold text-slate-900 whitespace-nowrap">
-                      {t.plate}
-                    </td>
-                    <td className="px-5 py-3.5 text-slate-700">{t.model}</td>
-                    <td className="px-5 py-3.5 text-slate-600">{t.capacityTons} T</td>
-                    <td className="px-5 py-3.5">
-                      <StatusBadge status={t.status} />
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <DocDate value={t.fitnessExpiry} label="fitness" />
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <DocDate value={t.insuranceExpiry} label="insurance" />
-                    </td>
-                    <td className="px-5 py-3.5 text-slate-600 whitespace-nowrap">
-                      {t.odometerKm.toLocaleString('en-IN')} km
-                      {t.status === 'maintenance' ? (
-                        <span className="ml-2 inline-flex items-center gap-1 text-orange-600 text-xs">
-                          <Wrench className="h-3 w-3" /> workshop
+                filtered.map((t) => {
+                  const since = kmSinceService(t.odometerKm, t.lastServiceKm)
+                  const due = needsService(t.odometerKm, t.lastServiceKm)
+                  const serviceTone = due
+                    ? 'text-red-700 font-medium'
+                    : since >= SERVICE_INTERVAL_KM * 0.8
+                      ? 'text-orange-700 font-medium'
+                      : 'text-slate-600'
+                  return (
+                    <tr key={t.id} className="hover:bg-slate-50/80">
+                      <td className="px-5 py-3.5 font-semibold text-slate-900 whitespace-nowrap">
+                        {t.plate}
+                      </td>
+                      <td className="px-5 py-3.5 text-slate-700">{t.model}</td>
+                      <td className="px-5 py-3.5 text-slate-600">{t.capacityTons} T</td>
+                      <td className="px-5 py-3.5">
+                        <StatusBadge status={t.status} />
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <DocDate value={t.fitnessExpiry} label="fitness" />
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <DocDate value={t.insuranceExpiry} label="insurance" />
+                      </td>
+                      <td className="px-5 py-3.5 text-slate-600 whitespace-nowrap">
+                        {t.odometerKm.toLocaleString('en-IN')} km
+                        {t.status === 'maintenance' ? (
+                          <span className="ml-2 inline-flex items-center gap-1 text-orange-600 text-xs">
+                            <Wrench className="h-3 w-3" /> workshop
+                          </span>
+                        ) : null}
+                      </td>
+                      <td className="px-5 py-3.5 whitespace-nowrap">
+                        <span className={serviceTone}>
+                          {since.toLocaleString('en-IN')} km
+                          {due ? (
+                            <span className="ml-1.5 inline-flex rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-800">
+                              due
+                            </span>
+                          ) : null}
                         </span>
-                      ) : null}
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                    </tr>
+                  )
+                })
               )}
             </tbody>
           </table>
