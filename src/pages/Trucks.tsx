@@ -4,6 +4,8 @@ import StatusBadge from '../components/StatusBadge'
 import { trucks } from '../data/mock'
 import type { TruckStatus } from '../types'
 
+import { isDueSoon, isExpired } from '../utils/dates'
+
 const STATUS_FILTERS: { id: 'all' | TruckStatus; label: string }[] = [
   { id: 'all', label: 'All' },
   { id: 'on_trip', label: 'On trip' },
@@ -11,22 +13,6 @@ const STATUS_FILTERS: { id: 'all' | TruckStatus; label: string }[] = [
   { id: 'maintenance', label: 'Workshop' },
   { id: 'idle', label: 'Idle' },
 ]
-
-function todayIso() {
-  return new Date().toISOString().slice(0, 10)
-}
-
-function isExpired(isoDate: string, today = todayIso()) {
-  return isoDate < today
-}
-
-function isDueSoon(isoDate: string, today = todayIso(), withinDays = 45) {
-  if (isoDate < today) return false
-  const due = new Date(`${isoDate}T00:00:00`)
-  const now = new Date(`${today}T00:00:00`)
-  const diffDays = (due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-  return diffDays <= withinDays
-}
 
 function DocDate({ value, label }: { value: string; label: string }) {
   const expired = isExpired(value)

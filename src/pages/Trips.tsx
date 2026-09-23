@@ -4,6 +4,8 @@ import StatusBadge from '../components/StatusBadge'
 import { driverById, formatInr, trips, truckById } from '../data/mock'
 import type { Trip, TripStatus } from '../types'
 
+import { todayIso } from '../utils/dates'
+
 const STATUS_FILTERS: { id: 'all' | TripStatus; label: string }[] = [
   { id: 'all', label: 'All' },
   { id: 'planned', label: 'Planned' },
@@ -11,10 +13,6 @@ const STATUS_FILTERS: { id: 'all' | TripStatus; label: string }[] = [
   { id: 'delivered', label: 'Delivered' },
   { id: 'settled', label: 'Settled' },
 ]
-
-function todayIso() {
-  return new Date().toISOString().slice(0, 10)
-}
 
 function isEtaOverdue(trip: Trip, today = todayIso()) {
   return (
