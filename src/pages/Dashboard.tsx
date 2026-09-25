@@ -25,8 +25,8 @@ function needsService(t: FleetTruck) {
 
 type DocAlert = {
   id: string
-  plate: string
-  kind: 'fitness' | 'insurance' | 'service'
+  label: string
+  kind: 'fitness' | 'insurance' | 'service' | 'licence'
   detail: string
   severity: 'expired' | 'soon' | 'service'
 }
@@ -41,7 +41,7 @@ export default function Dashboard() {
     if (isExpired(t.fitnessExpiry)) {
       docAlerts.push({
         id: `${t.id}-fitness`,
-        plate: t.plate,
+        label: t.plate,
         kind: 'fitness',
         detail: `fitness expired ${t.fitnessExpiry}`,
         severity: 'expired',
@@ -49,7 +49,7 @@ export default function Dashboard() {
     } else if (isDueSoon(t.fitnessExpiry)) {
       docAlerts.push({
         id: `${t.id}-fitness`,
-        plate: t.plate,
+        label: t.plate,
         kind: 'fitness',
         detail: `fitness due ${t.fitnessExpiry}`,
         severity: 'soon',
@@ -58,7 +58,7 @@ export default function Dashboard() {
     if (isExpired(t.insuranceExpiry)) {
       docAlerts.push({
         id: `${t.id}-insurance`,
-        plate: t.plate,
+        label: t.plate,
         kind: 'insurance',
         detail: `insurance expired ${t.insuranceExpiry}`,
         severity: 'expired',
@@ -66,7 +66,7 @@ export default function Dashboard() {
     } else if (isDueSoon(t.insuranceExpiry)) {
       docAlerts.push({
         id: `${t.id}-insurance`,
-        plate: t.plate,
+        label: t.plate,
         kind: 'insurance',
         detail: `insurance due ${t.insuranceExpiry}`,
         severity: 'soon',
@@ -75,10 +75,30 @@ export default function Dashboard() {
     if (needsService(t)) {
       docAlerts.push({
         id: `${t.id}-service`,
-        plate: t.plate,
+        label: t.plate,
         kind: 'service',
         detail: `${kmSinceService(t).toLocaleString('en-IN')} km since service`,
         severity: 'service',
+      })
+    }
+  }
+
+  for (const d of drivers) {
+    if (isExpired(d.licenceExpiry)) {
+      docAlerts.push({
+        id: `${d.id}-licence`,
+        label: d.name,
+        kind: 'licence',
+        detail: `licence expired ${d.licenceExpiry}`,
+        severity: 'expired',
+      })
+    } else if (isDueSoon(d.licenceExpiry)) {
+      docAlerts.push({
+        id: `${d.id}-licence`,
+        label: d.name,
+        kind: 'licence',
+        detail: `licence due ${d.licenceExpiry}`,
+        severity: 'soon',
       })
     }
   }
@@ -183,7 +203,7 @@ export default function Dashboard() {
               <div className="flex items-center gap-2 text-orange-800 mb-2">
                 <AlertTriangle className="h-4 w-4" />
                 <h2 className="font-display font-semibold text-sm">
-                  Docs & service alerts
+                  Docs, licences & service
                 </h2>
               </div>
               <ul className="space-y-1.5 text-sm text-orange-900/80">
@@ -194,7 +214,7 @@ export default function Dashboard() {
                         a.severity === 'expired' ? 'font-semibold text-red-800' : undefined
                       }
                     >
-                      {a.plate}
+                      {a.label}
                     </span>{' '}
                     — {a.detail}
                   </li>
