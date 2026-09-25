@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Fuel, Receipt, Wrench, Wallet } from 'lucide-react'
+import { Fuel, Receipt, Search, Wrench, Wallet } from 'lucide-react'
 import StatCard from '../components/StatCard'
 import { expenses, financeSummary, formatInr, trips } from '../data/mock'
 import type { Expense } from '../types'
@@ -33,15 +33,23 @@ const CATEGORY_FILTERS: { id: 'all' | ExpenseCategory; label: string }[] = [
 
 export default function Finances() {
   const [categoryFilter, setCategoryFilter] = useState<'all' | ExpenseCategory>('all')
+  const [query, setQuery] = useState('')
 
   const settledFreight = trips
     .filter((t) => t.status === 'settled' || t.status === 'delivered')
     .reduce((s, t) => s + t.freightInr, 0)
 
   const filteredExpenses = useMemo(() => {
-    if (categoryFilter === 'all') return expenses
-    return expenses.filter((e) => e.category === categoryFilter)
-  }, [categoryFilter])
+    const q = query.trim().toLowerCase()
+    return expenses.filter((e) => {
+      if (categoryFilter !== 'all' && e.category !== categoryFilter) return false
+      if (!q) return true
+      return (
+        e.description.toLowerCase().includes(q) ||
+        categoryLabel[e.category].toLowerCase().includes(q)
+      )
+    })
+  }, [categoryFilter, query])
 
   const filteredTotal = useMemo(
     () => filteredExpenses.reduce((s, e) => s + e.amountInr, 0),
@@ -119,6 +127,23 @@ export default function Finances() {
                 {formatInr(filteredTotal)}
               </p>
             </div>
+            <div className="relative w-full sm:max-w-xs">
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                aria-hidden="true"
+              />
+              <label htmlFor="expense-search" className="sr-only">
+                Search expenses by description or category
+              </label>
+              <input
+                id="expense-search"
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search description or category…"
+                className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/40"
+              />
+            </div>
             <div
               className="flex flex-wrap gap-1.5"
               role="group"
@@ -146,7 +171,7 @@ export default function Finances() {
           </div>
           {filteredExpenses.length === 0 ? (
             <p className="px-5 py-10 text-center text-sm text-slate-500">
-              No expenses in this category.
+              No expenses match this search or category filter.
             </p>
           ) : (
             <ul className="divide-y divide-slate-100">
