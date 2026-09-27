@@ -25,6 +25,16 @@ function margin(trip: Trip) {
   return trip.freightInr - trip.dieselInr - trip.tollInr
 }
 
+function marginPct(trip: Trip) {
+  if (trip.freightInr <= 0) return null
+  return Math.round((margin(trip) / trip.freightInr) * 100)
+}
+
+function dieselPerKm(trip: Trip) {
+  if (trip.distanceKm <= 0) return null
+  return Math.round(trip.dieselInr / trip.distanceKm)
+}
+
 export default function Trips() {
   const [statusFilter, setStatusFilter] = useState<'all' | TripStatus>('all')
   const [query, setQuery] = useState('')
@@ -127,6 +137,8 @@ export default function Trips() {
             const truck = truckById(trip.truckId)
             const driver = driverById(trip.driverId)
             const m = margin(trip)
+            const dpk = dieselPerKm(trip)
+            const mp = marginPct(trip)
             const overdue = isEtaOverdue(trip)
             return (
               <div
@@ -170,7 +182,7 @@ export default function Trips() {
                     </p>
                   </div>
                 </div>
-                <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 rounded-lg bg-slate-50 p-3 text-sm">
+                <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 rounded-lg bg-slate-50 p-3 text-sm">
                   <div>
                     <p className="text-xs text-slate-500">Diesel</p>
                     <p className="font-medium">{formatInr(trip.dieselInr)}</p>
@@ -184,9 +196,23 @@ export default function Trips() {
                     <p className="font-medium">{formatInr(trip.advanceInr)}</p>
                   </div>
                   <div>
+                    <p className="text-xs text-slate-500">Diesel ₹/km</p>
+                    <p className="font-medium">{dpk != null ? formatInr(dpk) : '—'}</p>
+                  </div>
+                  <div>
                     <p className="text-xs text-slate-500">Est. margin</p>
                     <p className={`font-semibold ${m >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
                       {formatInr(m)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Margin %</p>
+                    <p
+                      className={`font-semibold ${
+                        (mp ?? 0) >= 0 ? 'text-emerald-700' : 'text-red-600'
+                      }`}
+                    >
+                      {mp != null ? `${mp}%` : '—'}
                     </p>
                   </div>
                 </div>
