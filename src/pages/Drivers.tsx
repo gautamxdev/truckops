@@ -160,7 +160,14 @@ export default function Drivers() {
                 <dl className="space-y-1.5 text-sm">
                   <div className="flex justify-between gap-2">
                     <dt className="text-slate-500">Phone</dt>
-                    <dd className="font-medium text-slate-800">{d.phone}</dd>
+                    <dd className="font-medium text-slate-800">
+                      <a
+                        href={`tel:${d.phone.replace(/\s+/g, '')}`}
+                        className="text-sky-700 hover:text-sky-900 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1 rounded"
+                      >
+                        {d.phone}
+                      </a>
+                    </dd>
                   </div>
                   <div className="flex justify-between gap-2">
                     <dt className="text-slate-500">Licence</dt>
