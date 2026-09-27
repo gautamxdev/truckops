@@ -16,6 +16,19 @@ function needsService(odometerKm: number, lastServiceKm: number) {
   return kmSinceService(odometerKm, lastServiceKm) >= SERVICE_INTERVAL_KM
 }
 
+function needsAttention(t: {
+  fitnessExpiry: string
+  insuranceExpiry: string
+  odometerKm: number
+  lastServiceKm: number
+}) {
+  return (
+    isExpired(t.fitnessExpiry) ||
+    isExpired(t.insuranceExpiry) ||
+    needsService(t.odometerKm, t.lastServiceKm)
+  )
+}
+
 const STATUS_FILTERS: { id: 'all' | TruckStatus; label: string }[] = [
   { id: 'all', label: 'All' },
   { id: 'on_trip', label: 'On trip' },
@@ -60,23 +73,27 @@ function DocDate({ value, label }: { value: string; label: string }) {
 export default function Trucks() {
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | TruckStatus>('all')
+  const [alertsOnly, setAlertsOnly] = useState(false)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     return trucks.filter((t) => {
       if (statusFilter !== 'all' && t.status !== statusFilter) return false
+      if (alertsOnly && !needsAttention(t)) return false
       if (!q) return true
       return (
         t.plate.toLowerCase().includes(q) ||
         t.model.toLowerCase().includes(q)
       )
     })
-  }, [query, statusFilter])
+  }, [query, statusFilter, alertsOnly])
 
   const serviceDueCount = useMemo(
     () => trucks.filter((t) => needsService(t.odometerKm, t.lastServiceKm)).length,
     [],
   )
+
+  const alertCount = useMemo(() => trucks.filter((t) => needsAttention(t)).length, [])
 
   return (
     <div className="space-y-6">
@@ -118,29 +135,45 @@ export default function Trucks() {
             className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/40"
           />
         </div>
-        <div
-          className="flex flex-wrap gap-1.5"
-          role="group"
-          aria-label="Filter by truck status"
-        >
-          {STATUS_FILTERS.map((f) => {
-            const active = statusFilter === f.id
-            return (
-              <button
-                key={f.id}
-                type="button"
-                aria-pressed={active}
-                onClick={() => setStatusFilter(f.id)}
-                className={`rounded-full px-3 py-1.5 text-xs font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 ${
-                  active
-                    ? 'bg-slate-900 text-white'
-                    : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-                }`}
-              >
-                {f.label}
-              </button>
-            )
-          })}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <div
+            className="flex flex-wrap gap-1.5"
+            role="group"
+            aria-label="Filter by truck status"
+          >
+            {STATUS_FILTERS.map((f) => {
+              const active = statusFilter === f.id
+              return (
+                <button
+                  key={f.id}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => setStatusFilter(f.id)}
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 ${
+                    active
+                      ? 'bg-slate-900 text-white'
+                      : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              )
+            })}
+          </div>
+          {alertCount > 0 ? (
+            <button
+              type="button"
+              aria-pressed={alertsOnly}
+              onClick={() => setAlertsOnly((v) => !v)}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 ${
+                alertsOnly
+                  ? 'bg-orange-600 text-white'
+                  : 'bg-orange-50 text-orange-800 border border-orange-200 hover:bg-orange-100'
+              }`}
+            >
+              Needs attention ({alertCount})
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -166,7 +199,7 @@ export default function Trucks() {
                     colSpan={8}
                     className="px-5 py-10 text-center text-sm text-slate-500"
                   >
-                    No trucks match this search or status filter.
+                    No trucks match this search, status, or attention filter.
                   </td>
                 </tr>
               ) : (
@@ -179,7 +212,14 @@ export default function Trucks() {
                       ? 'text-orange-700 font-medium'
                       : 'text-slate-600'
                   return (
-                    <tr key={t.id} className="hover:bg-slate-50/80">
+                    <tr
+                      key={t.id}
+                      className={
+                        needsAttention(t)
+                          ? 'bg-orange-50/40 hover:bg-orange-50/70'
+                          : 'hover:bg-slate-50/80'
+                      }
+                    >
                       <td className="px-5 py-3.5 font-semibold text-slate-900 whitespace-nowrap">
                         {t.plate}
                       </td>
