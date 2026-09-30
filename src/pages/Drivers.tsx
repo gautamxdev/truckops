@@ -13,6 +13,10 @@ const STATUS_FILTERS: { id: 'all' | DriverStatus; label: string }[] = [
   { id: 'off_duty', label: 'Off duty' },
 ]
 
+function hasLicenceAlert(licenceExpiry: string) {
+  return isExpired(licenceExpiry) || isDueSoon(licenceExpiry)
+}
+
 function LicenceDate({ value }: { value: string }) {
   const expired = isExpired(value)
   const soon = isDueSoon(value)
@@ -46,11 +50,13 @@ function LicenceDate({ value }: { value: string }) {
 export default function Drivers() {
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | DriverStatus>('all')
+  const [licenceAlertsOnly, setLicenceAlertsOnly] = useState(false)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     return drivers.filter((d) => {
       if (statusFilter !== 'all' && d.status !== statusFilter) return false
+      if (licenceAlertsOnly && !hasLicenceAlert(d.licenceExpiry)) return false
       if (!q) return true
       return (
         d.name.toLowerCase().includes(q) ||
@@ -59,10 +65,15 @@ export default function Drivers() {
         d.licenceNo.toLowerCase().includes(q)
       )
     })
-  }, [query, statusFilter])
+  }, [query, statusFilter, licenceAlertsOnly])
 
   const expiredCount = useMemo(
     () => drivers.filter((d) => isExpired(d.licenceExpiry)).length,
+    [],
+  )
+
+  const licenceAlertCount = useMemo(
+    () => drivers.filter((d) => hasLicenceAlert(d.licenceExpiry)).length,
     [],
   )
 
@@ -106,41 +117,57 @@ export default function Drivers() {
             className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/40"
           />
         </div>
-        <div
-          className="flex flex-wrap gap-1.5"
-          role="group"
-          aria-label="Filter by driver status"
-        >
-          {STATUS_FILTERS.map((f) => {
-            const active = statusFilter === f.id
-            return (
-              <button
-                key={f.id}
-                type="button"
-                aria-pressed={active}
-                onClick={() => setStatusFilter(f.id)}
-                className={`rounded-full px-3 py-1.5 text-xs font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 ${
-                  active
-                    ? 'bg-slate-900 text-white'
-                    : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-                }`}
-              >
-                {f.label}
-              </button>
-            )
-          })}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <div
+            className="flex flex-wrap gap-1.5"
+            role="group"
+            aria-label="Filter by driver status"
+          >
+            {STATUS_FILTERS.map((f) => {
+              const active = statusFilter === f.id
+              return (
+                <button
+                  key={f.id}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => setStatusFilter(f.id)}
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 ${
+                    active
+                      ? 'bg-slate-900 text-white'
+                      : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              )
+            })}
+          </div>
+          {licenceAlertCount > 0 ? (
+            <button
+              type="button"
+              aria-pressed={licenceAlertsOnly}
+              onClick={() => setLicenceAlertsOnly((v) => !v)}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 ${
+                licenceAlertsOnly
+                  ? 'bg-orange-600 text-white'
+                  : 'bg-orange-50 text-orange-800 border border-orange-200 hover:bg-orange-100'
+              }`}
+            >
+              Licence alerts ({licenceAlertCount})
+            </button>
+          ) : null}
         </div>
       </div>
 
       {filtered.length === 0 ? (
         <div className="rounded-xl border border-slate-200 bg-white px-5 py-10 text-center text-sm text-slate-500 shadow-sm">
-          No drivers match this search or status filter.
+          No drivers match this search, status, or licence alert filter.
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {filtered.map((d) => {
             const truck = d.assignedTruckId ? truckById(d.assignedTruckId) : null
-            const licenceBad = isExpired(d.licenceExpiry) || isDueSoon(d.licenceExpiry)
+            const licenceBad = hasLicenceAlert(d.licenceExpiry)
             return (
               <div
                 key={d.id}
