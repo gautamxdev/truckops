@@ -35,6 +35,11 @@ function dieselPerKm(trip: Trip) {
   return Math.round(trip.dieselInr / trip.distanceKm)
 }
 
+/** Cash still to collect after driver advance (common Indian trip settlement). */
+function balanceDue(trip: Trip) {
+  return trip.freightInr - trip.advanceInr
+}
+
 export default function Trips() {
   const [statusFilter, setStatusFilter] = useState<'all' | TripStatus>('all')
   const [query, setQuery] = useState('')
@@ -139,6 +144,7 @@ export default function Trips() {
             const m = margin(trip)
             const dpk = dieselPerKm(trip)
             const mp = marginPct(trip)
+            const due = balanceDue(trip)
             const overdue = isEtaOverdue(trip)
             return (
               <div
@@ -182,7 +188,7 @@ export default function Trips() {
                     </p>
                   </div>
                 </div>
-                <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 rounded-lg bg-slate-50 p-3 text-sm">
+                <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 rounded-lg bg-slate-50 p-3 text-sm">
                   <div>
                     <p className="text-xs text-slate-500">Diesel</p>
                     <p className="font-medium">{formatInr(trip.dieselInr)}</p>
@@ -194,6 +200,16 @@ export default function Trips() {
                   <div>
                     <p className="text-xs text-slate-500">Advance</p>
                     <p className="font-medium">{formatInr(trip.advanceInr)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Balance due</p>
+                    <p
+                      className={`font-semibold ${
+                        due > 0 ? 'text-amber-800' : due < 0 ? 'text-red-600' : 'text-slate-700'
+                      }`}
+                    >
+                      {formatInr(due)}
+                    </p>
                   </div>
                   <div>
                     <p className="text-xs text-slate-500">Diesel ₹/km</p>
