@@ -4,7 +4,7 @@ import StatusBadge from '../components/StatusBadge'
 import { drivers, truckById } from '../data/mock'
 import type { DriverStatus } from '../types'
 
-import { isDueSoon, isExpired } from '../utils/dates'
+import { formatDateIn, isDueSoon, isExpired } from '../utils/dates'
 
 const STATUS_FILTERS: { id: 'all' | DriverStatus; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -29,7 +29,7 @@ function LicenceDate({ value }: { value: string }) {
 
   return (
     <dd className={tone}>
-      <span className="whitespace-nowrap">{value}</span>
+      <span className="whitespace-nowrap">{formatDateIn(value)}</span>
       {hint ? (
         <span className="sr-only"> (licence {hint})</span>
       ) : null}

@@ -4,7 +4,7 @@ import StatusBadge from '../components/StatusBadge'
 import { driverById, formatInr, trips, truckById } from '../data/mock'
 import type { Trip, TripStatus } from '../types'
 
-import { todayIso } from '../utils/dates'
+import { formatDateIn, todayIso } from '../utils/dates'
 
 const STATUS_FILTERS: { id: 'all' | TripStatus; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -200,7 +200,7 @@ export default function Trips() {
                         overdue ? 'text-red-700 font-medium' : 'text-slate-400'
                       }`}
                     >
-                      Dep {trip.departureDate} · ETA {trip.etaDate}
+                      Dep {formatDateIn(trip.departureDate)} · ETA {formatDateIn(trip.etaDate)}
                       {overdue ? (
                         <span className="sr-only"> (ETA overdue)</span>
                       ) : null}

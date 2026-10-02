@@ -11,7 +11,7 @@ import {
   driverById,
 } from '../data/mock'
 import type { Truck as FleetTruck } from '../types'
-import { isDueSoon, isExpired } from '../utils/dates'
+import { formatDateIn, isDueSoon, isExpired } from '../utils/dates'
 
 const SERVICE_INTERVAL_KM = 10000
 
@@ -43,7 +43,7 @@ export default function Dashboard() {
         id: `${t.id}-fitness`,
         label: t.plate,
         kind: 'fitness',
-        detail: `fitness expired ${t.fitnessExpiry}`,
+        detail: `fitness expired ${formatDateIn(t.fitnessExpiry)}`,
         severity: 'expired',
       })
     } else if (isDueSoon(t.fitnessExpiry)) {
@@ -51,7 +51,7 @@ export default function Dashboard() {
         id: `${t.id}-fitness`,
         label: t.plate,
         kind: 'fitness',
-        detail: `fitness due ${t.fitnessExpiry}`,
+        detail: `fitness due ${formatDateIn(t.fitnessExpiry)}`,
         severity: 'soon',
       })
     }
@@ -60,7 +60,7 @@ export default function Dashboard() {
         id: `${t.id}-insurance`,
         label: t.plate,
         kind: 'insurance',
-        detail: `insurance expired ${t.insuranceExpiry}`,
+        detail: `insurance expired ${formatDateIn(t.insuranceExpiry)}`,
         severity: 'expired',
       })
     } else if (isDueSoon(t.insuranceExpiry)) {
@@ -68,7 +68,7 @@ export default function Dashboard() {
         id: `${t.id}-insurance`,
         label: t.plate,
         kind: 'insurance',
-        detail: `insurance due ${t.insuranceExpiry}`,
+        detail: `insurance due ${formatDateIn(t.insuranceExpiry)}`,
         severity: 'soon',
       })
     }
@@ -89,7 +89,7 @@ export default function Dashboard() {
         id: `${d.id}-licence`,
         label: d.name,
         kind: 'licence',
-        detail: `licence expired ${d.licenceExpiry}`,
+        detail: `licence expired ${formatDateIn(d.licenceExpiry)}`,
         severity: 'expired',
       })
     } else if (isDueSoon(d.licenceExpiry)) {
@@ -97,7 +97,7 @@ export default function Dashboard() {
         id: `${d.id}-licence`,
         label: d.name,
         kind: 'licence',
-        detail: `licence due ${d.licenceExpiry}`,
+        detail: `licence due ${formatDateIn(d.licenceExpiry)}`,
         severity: 'soon',
       })
     }

@@ -3,6 +3,7 @@ import { Fuel, Receipt, Search, Wrench, Wallet } from 'lucide-react'
 import StatCard from '../components/StatCard'
 import { expenses, financeSummary, formatInr, trips } from '../data/mock'
 import type { Expense } from '../types'
+import { formatDateIn } from '../utils/dates'
 
 type ExpenseCategory = Expense['category']
 
@@ -186,7 +187,7 @@ export default function Finances() {
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-slate-900 truncate">{e.description}</p>
                         <p className="text-xs text-slate-500">
-                          {categoryLabel[e.category]} · {e.date}
+                          {categoryLabel[e.category]} · {formatDateIn(e.date)}
                         </p>
                       </div>
                     </div>

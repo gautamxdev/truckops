@@ -4,7 +4,7 @@ import StatusBadge from '../components/StatusBadge'
 import { trucks } from '../data/mock'
 import type { TruckStatus } from '../types'
 
-import { isDueSoon, isExpired } from '../utils/dates'
+import { formatDateIn, isDueSoon, isExpired } from '../utils/dates'
 
 const SERVICE_INTERVAL_KM = 10000
 
@@ -49,7 +49,7 @@ function DocDate({ value, label }: { value: string; label: string }) {
 
   return (
     <span className={`whitespace-nowrap ${tone}`}>
-      {value}
+      {formatDateIn(value)}
       {hint ? (
         <span className="sr-only">
           {' '}
