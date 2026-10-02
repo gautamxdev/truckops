@@ -35,6 +35,12 @@ function dieselPerKm(trip: Trip) {
   return Math.round(trip.dieselInr / trip.distanceKm)
 }
 
+/** Broker freight rate per km — compare lanes before accepting a load. */
+function freightPerKm(trip: Trip) {
+  if (trip.distanceKm <= 0) return null
+  return Math.round(trip.freightInr / trip.distanceKm)
+}
+
 /** Cash still to collect after driver advance (common Indian trip settlement). */
 function balanceDue(trip: Trip) {
   return trip.freightInr - trip.advanceInr
@@ -161,6 +167,7 @@ export default function Trips() {
             const driver = driverById(trip.driverId)
             const m = margin(trip)
             const dpk = dieselPerKm(trip)
+            const fpk = freightPerKm(trip)
             const mp = marginPct(trip)
             const due = balanceDue(trip)
             const overdue = isEtaOverdue(trip)
@@ -206,7 +213,7 @@ export default function Trips() {
                     </p>
                   </div>
                 </div>
-                <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 rounded-lg bg-slate-50 p-3 text-sm">
+                <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-8 gap-3 rounded-lg bg-slate-50 p-3 text-sm">
                   <div>
                     <p className="text-xs text-slate-500">Diesel</p>
                     <p className="font-medium">{formatInr(trip.dieselInr)}</p>
@@ -228,6 +235,10 @@ export default function Trips() {
                     >
                       {formatInr(due)}
                     </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Freight ₹/km</p>
+                    <p className="font-medium">{fpk != null ? formatInr(fpk) : '—'}</p>
                   </div>
                   <div>
                     <p className="text-xs text-slate-500">Diesel ₹/km</p>
