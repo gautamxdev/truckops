@@ -10,8 +10,8 @@ import {
   truckById,
   driverById,
 } from '../data/mock'
-import type { Truck as FleetTruck } from '../types'
-import { formatDateIn, isDueSoon, isExpired } from '../utils/dates'
+import type { Trip, Truck as FleetTruck } from '../types'
+import { formatDateIn, isDueSoon, isExpired, todayIso } from '../utils/dates'
 
 const SERVICE_INTERVAL_KM = 10000
 
@@ -21,6 +21,13 @@ function kmSinceService(t: FleetTruck) {
 
 function needsService(t: FleetTruck) {
   return kmSinceService(t) >= SERVICE_INTERVAL_KM
+}
+
+function isEtaOverdue(trip: Trip, today = todayIso()) {
+  return (
+    (trip.status === 'in_transit' || trip.status === 'planned') &&
+    trip.etaDate < today
+  )
 }
 
 type DocAlert = {
@@ -35,6 +42,7 @@ export default function Dashboard() {
   const onTrip = trucks.filter((t) => t.status === 'on_trip').length
   const available = trucks.filter((t) => t.status === 'available').length
   const activeTrips = trips.filter((t) => t.status === 'in_transit' || t.status === 'planned')
+  const overdueEtaCount = activeTrips.filter((t) => isEtaOverdue(t)).length
 
   const docAlerts: DocAlert[] = []
   for (const t of trucks) {
@@ -146,22 +154,53 @@ export default function Dashboard() {
 
       <div className="grid lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-2">
             <h2 className="font-display font-semibold text-slate-900">Live trips</h2>
-            <span className="text-xs text-slate-500">{activeTrips.length} open</span>
+            <span className="text-xs text-slate-500">
+              {activeTrips.length} open
+              {overdueEtaCount > 0 ? (
+                <span className="ml-1 font-medium text-red-600">
+                  · {overdueEtaCount} overdue ETA{overdueEtaCount === 1 ? '' : 's'}
+                </span>
+              ) : null}
+            </span>
           </div>
           <div className="divide-y divide-slate-100">
             {activeTrips.map((trip) => {
               const truck = truckById(trip.truckId)
               const driver = driverById(trip.driverId)
+              const overdue = isEtaOverdue(trip)
               return (
-                <div key={trip.id} className="px-5 py-4 flex flex-wrap items-center gap-3 justify-between">
+                <div
+                  key={trip.id}
+                  className={`px-5 py-4 flex flex-wrap items-center gap-3 justify-between ${
+                    overdue ? 'bg-red-50/60' : ''
+                  }`}
+                >
                   <div>
-                    <p className="font-medium text-slate-900">
-                      {trip.origin} → {trip.destination}
-                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium text-slate-900">
+                        {trip.origin} → {trip.destination}
+                      </p>
+                      {overdue ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-800">
+                          <AlertTriangle className="h-3 w-3" aria-hidden="true" />
+                          ETA overdue
+                        </span>
+                      ) : null}
+                    </div>
                     <p className="text-xs text-slate-500 mt-0.5">
                       {truck?.plate} · {driver?.name} · {trip.cargo}
+                    </p>
+                    <p
+                      className={`text-xs mt-0.5 ${
+                        overdue ? 'text-red-700 font-medium' : 'text-slate-400'
+                      }`}
+                    >
+                      ETA {formatDateIn(trip.etaDate)}
+                      {overdue ? (
+                        <span className="sr-only"> (ETA overdue)</span>
+                      ) : null}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
