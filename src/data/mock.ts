@@ -298,3 +298,8 @@ export function truckById(id: string): Truck | undefined {
 export function driverById(id: string): Driver | undefined {
   return drivers.find((d) => d.id === id)
 }
+
+export function tripById(id: string): Trip | undefined {
+  return trips.find((t) => t.id === id)
+}
+

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Fuel, Receipt, Search, Wrench, Wallet } from 'lucide-react'
 import StatCard from '../components/StatCard'
-import { expenses, financeSummary, formatInr, trips } from '../data/mock'
+import { expenses, financeSummary, formatInr, tripById, trips } from '../data/mock'
 import type { Expense } from '../types'
 import { formatDateIn } from '../utils/dates'
 
@@ -45,9 +45,12 @@ export default function Finances() {
     return expenses.filter((e) => {
       if (categoryFilter !== 'all' && e.category !== categoryFilter) return false
       if (!q) return true
+      const trip = e.tripId ? tripById(e.tripId) : undefined
+      const lane = trip ? `${trip.origin} ${trip.destination}`.toLowerCase() : ''
       return (
         e.description.toLowerCase().includes(q) ||
-        categoryLabel[e.category].toLowerCase().includes(q)
+        categoryLabel[e.category].toLowerCase().includes(q) ||
+        lane.includes(q)
       )
     })
   }, [categoryFilter, query])
@@ -134,14 +137,14 @@ export default function Finances() {
                 aria-hidden="true"
               />
               <label htmlFor="expense-search" className="sr-only">
-                Search expenses by description or category
+                Search expenses by description, category, or trip lane
               </label>
               <input
                 id="expense-search"
                 type="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search description or category…"
+                placeholder="Search description, category, lane…"
                 className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/40"
               />
             </div>
@@ -178,6 +181,7 @@ export default function Finances() {
             <ul className="divide-y divide-slate-100">
               {filteredExpenses.map((e) => {
                 const Icon = categoryIcon[e.category]
+                const trip = e.tripId ? tripById(e.tripId) : undefined
                 return (
                   <li key={e.id} className="px-5 py-3.5 flex items-center gap-3 justify-between">
                     <div className="flex items-center gap-3 min-w-0">
@@ -188,6 +192,14 @@ export default function Finances() {
                         <p className="text-sm font-medium text-slate-900 truncate">{e.description}</p>
                         <p className="text-xs text-slate-500">
                           {categoryLabel[e.category]} · {formatDateIn(e.date)}
+                          {trip ? (
+                            <span className="text-slate-600">
+                              {' '}
+                              · {trip.origin} → {trip.destination}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400"> · fleet / ops</span>
+                          )}
                         </p>
                       </div>
                     </div>
