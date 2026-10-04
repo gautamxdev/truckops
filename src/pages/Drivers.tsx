@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Search } from 'lucide-react'
+import { MessageCircle, Search } from 'lucide-react'
 import StatusBadge from '../components/StatusBadge'
 import { drivers, truckById } from '../data/mock'
 import type { DriverStatus } from '../types'
@@ -15,6 +15,16 @@ const STATUS_FILTERS: { id: 'all' | DriverStatus; label: string }[] = [
 
 function hasLicenceAlert(licenceExpiry: string) {
   return isExpired(licenceExpiry) || isDueSoon(licenceExpiry)
+}
+
+/** Digits-only E.164 for wa.me / tel deep links (Indian mobiles stored as +91 …). */
+function phoneDigits(phone: string) {
+  return phone.replace(/\D+/g, '')
+}
+
+function whatsappHref(phone: string) {
+  const digits = phoneDigits(phone)
+  return digits ? `https://wa.me/${digits}` : null
 }
 
 function LicenceDate({ value }: { value: string }) {
@@ -168,6 +178,7 @@ export default function Drivers() {
           {filtered.map((d) => {
             const truck = d.assignedTruckId ? truckById(d.assignedTruckId) : null
             const licenceBad = hasLicenceAlert(d.licenceExpiry)
+            const wa = whatsappHref(d.phone)
             return (
               <div
                 key={d.id}
@@ -185,15 +196,29 @@ export default function Drivers() {
                   <StatusBadge status={d.status} />
                 </div>
                 <dl className="space-y-1.5 text-sm">
-                  <div className="flex justify-between gap-2">
+                  <div className="flex justify-between gap-2 items-start">
                     <dt className="text-slate-500">Phone</dt>
-                    <dd className="font-medium text-slate-800">
-                      <a
-                        href={`tel:${d.phone.replace(/\s+/g, '')}`}
-                        className="text-sky-700 hover:text-sky-900 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1 rounded"
-                      >
-                        {d.phone}
-                      </a>
+                    <dd className="font-medium text-slate-800 text-right space-y-1">
+                      <div>
+                        <a
+                          href={`tel:${phoneDigits(d.phone)}`}
+                          className="text-sky-700 hover:text-sky-900 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1 rounded"
+                        >
+                          {d.phone}
+                        </a>
+                      </div>
+                      {wa ? (
+                        <a
+                          href={wa}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 hover:text-emerald-900 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1 rounded"
+                          aria-label={`WhatsApp ${d.name}`}
+                        >
+                          <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                          WhatsApp
+                        </a>
+                      ) : null}
                     </dd>
                   </div>
                   <div className="flex justify-between gap-2">
