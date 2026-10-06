@@ -4,7 +4,7 @@ import StatusBadge from '../components/StatusBadge'
 import { drivers, truckById } from '../data/mock'
 import type { DriverStatus } from '../types'
 
-import { formatDateIn, isDueSoon, isExpired } from '../utils/dates'
+import { dueInLabel, formatDateIn, isDueSoon, isExpired } from '../utils/dates'
 
 const STATUS_FILTERS: { id: 'all' | DriverStatus; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -35,7 +35,7 @@ function LicenceDate({ value }: { value: string }) {
     : soon
       ? 'text-orange-700 font-medium'
       : 'text-slate-700'
-  const hint = expired ? 'expired' : soon ? 'due soon' : null
+  const hint = expired ? 'expired' : soon ? `due ${dueInLabel(value)}` : null
 
   return (
     <dd className={tone}>

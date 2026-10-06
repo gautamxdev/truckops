@@ -4,7 +4,7 @@ import StatusBadge from '../components/StatusBadge'
 import { trucks } from '../data/mock'
 import type { TruckStatus } from '../types'
 
-import { formatDateIn, isDueSoon, isExpired } from '../utils/dates'
+import { dueInLabel, formatDateIn, isDueSoon, isExpired } from '../utils/dates'
 
 const SERVICE_INTERVAL_KM = 10000
 
@@ -45,7 +45,7 @@ function DocDate({ value, label }: { value: string; label: string }) {
     : soon
       ? 'text-orange-700 font-medium'
       : 'text-slate-600'
-  const hint = expired ? 'expired' : soon ? 'due soon' : null
+  const hint = expired ? 'expired' : soon ? `due ${dueInLabel(value)}` : null
 
   return (
     <span className={`whitespace-nowrap ${tone}`}>
