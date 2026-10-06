@@ -46,14 +46,38 @@ function balanceDue(trip: Trip) {
   return trip.freightInr - trip.advanceInr
 }
 
+type TripSort = 'departure_desc' | 'eta_asc' | 'margin_pct_desc' | 'balance_desc'
+
+const SORT_OPTIONS: { id: TripSort; label: string }[] = [
+  { id: 'departure_desc', label: 'Latest departure' },
+  { id: 'eta_asc', label: 'ETA soonest' },
+  { id: 'margin_pct_desc', label: 'Highest margin %' },
+  { id: 'balance_desc', label: 'Most balance due' },
+]
+
+function compareTrips(a: Trip, b: Trip, sort: TripSort) {
+  switch (sort) {
+    case 'eta_asc':
+      return a.etaDate.localeCompare(b.etaDate)
+    case 'margin_pct_desc':
+      return (marginPct(b) ?? -Infinity) - (marginPct(a) ?? -Infinity)
+    case 'balance_desc':
+      return balanceDue(b) - balanceDue(a)
+    case 'departure_desc':
+    default:
+      return b.departureDate.localeCompare(a.departureDate)
+  }
+}
+
 export default function Trips() {
   const [statusFilter, setStatusFilter] = useState<'all' | TripStatus>('all')
   const [query, setQuery] = useState('')
   const [overdueOnly, setOverdueOnly] = useState(false)
+  const [sort, setSort] = useState<TripSort>('departure_desc')
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return trips.filter((t) => {
+    const matches = trips.filter((t) => {
       if (statusFilter !== 'all' && t.status !== statusFilter) return false
       if (overdueOnly && !isEtaOverdue(t)) return false
       if (!q) return true
@@ -67,7 +91,8 @@ export default function Trips() {
         (driver?.name.toLowerCase().includes(q) ?? false)
       )
     })
-  }, [statusFilter, query, overdueOnly])
+    return matches.sort((a, b) => compareTrips(a, b, sort))
+  }, [statusFilter, query, overdueOnly, sort])
 
   const overdueCount = useMemo(
     () => trips.filter((t) => isEtaOverdue(t)).length,
@@ -139,6 +164,21 @@ export default function Trips() {
               )
             })}
           </div>
+          <label htmlFor="trip-sort" className="sr-only">
+            Sort trips
+          </label>
+          <select
+            id="trip-sort"
+            value={sort}
+            onChange={(e) => setSort(e.target.value as TripSort)}
+            className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/40"
+          >
+            {SORT_OPTIONS.map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.label}
+              </option>
+            ))}
+          </select>
           {overdueCount > 0 ? (
             <button
               type="button"
