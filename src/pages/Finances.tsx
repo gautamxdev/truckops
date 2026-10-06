@@ -32,6 +32,14 @@ const CATEGORY_FILTERS: { id: 'all' | ExpenseCategory; label: string }[] = [
   { id: 'other', label: 'Other' },
 ]
 
+const COST_MIX_ROWS = [
+  { label: 'Diesel', value: financeSummary.dieselInr, color: 'bg-amber-500' },
+  { label: 'Toll', value: financeSummary.tollInr, color: 'bg-sky-500' },
+  { label: 'Other', value: financeSummary.otherExpenseInr, color: 'bg-slate-400' },
+]
+
+const COST_MIX_TOTAL = COST_MIX_ROWS.reduce((s, row) => s + row.value, 0)
+
 export default function Finances() {
   const [categoryFilter, setCategoryFilter] = useState<'all' | ExpenseCategory>('all')
   const [query, setQuery] = useState('')
@@ -98,14 +106,8 @@ export default function Finances() {
       <div className="grid lg:grid-cols-5 gap-4">
         <div className="lg:col-span-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="font-display font-semibold text-slate-900 mb-4">Cost mix</h2>
-          {[
-            { label: 'Diesel', value: financeSummary.dieselInr, color: 'bg-amber-500' },
-            { label: 'Toll', value: financeSummary.tollInr, color: 'bg-sky-500' },
-            { label: 'Other', value: financeSummary.otherExpenseInr, color: 'bg-slate-400' },
-          ].map((row) => {
-            const total =
-              financeSummary.dieselInr + financeSummary.tollInr + financeSummary.otherExpenseInr
-            const pct = total ? Math.round((row.value / total) * 100) : 0
+          {COST_MIX_ROWS.map((row) => {
+            const pct = COST_MIX_TOTAL ? Math.round((row.value / COST_MIX_TOTAL) * 100) : 0
             return (
               <div key={row.label} className="mb-3">
                 <div className="flex justify-between text-sm mb-1">
@@ -114,7 +116,15 @@ export default function Finances() {
                     {formatInr(row.value)} · {pct}%
                   </span>
                 </div>
-                <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+                <div
+                  className="h-2 rounded-full bg-slate-100 overflow-hidden"
+                  role="meter"
+                  aria-label={`${row.label} share of costs`}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={pct}
+                  aria-valuetext={`${pct}% · ${formatInr(row.value)}`}
+                >
                   <div className={`h-full ${row.color}`} style={{ width: `${pct}%` }} />
                 </div>
               </div>
@@ -186,7 +196,7 @@ export default function Finances() {
                   <li key={e.id} className="px-5 py-3.5 flex items-center gap-3 justify-between">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="h-9 w-9 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
-                        <Icon className="h-4 w-4" />
+                        <Icon className="h-4 w-4" aria-hidden="true" />
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-slate-900 truncate">{e.description}</p>
