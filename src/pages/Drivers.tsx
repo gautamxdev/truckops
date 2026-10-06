@@ -68,7 +68,9 @@ export default function Drivers() {
       if (statusFilter !== 'all' && d.status !== statusFilter) return false
       if (licenceAlertsOnly && !hasLicenceAlert(d.licenceExpiry)) return false
       if (!q) return true
+      const plate = d.assignedTruckId ? truckById(d.assignedTruckId)?.plate : undefined
       return (
+        (plate?.toLowerCase().includes(q) ?? false) ||
         d.name.toLowerCase().includes(q) ||
         d.phone.toLowerCase().includes(q) ||
         d.homeBase.toLowerCase().includes(q) ||
@@ -116,14 +118,14 @@ export default function Drivers() {
             aria-hidden="true"
           />
           <label htmlFor="driver-search" className="sr-only">
-            Search drivers by name, phone, base, or licence
+            Search drivers by name, phone, base, licence, or truck plate
           </label>
           <input
             id="driver-search"
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search name, phone, base…"
+            placeholder="Search name, phone, plate…"
             className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/40"
           />
         </div>
