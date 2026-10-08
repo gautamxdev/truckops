@@ -50,7 +50,7 @@ export default function Finances() {
 
   const filteredExpenses = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return expenses.filter((e) => {
+    const matches = expenses.filter((e) => {
       if (categoryFilter !== 'all' && e.category !== categoryFilter) return false
       if (!q) return true
       const trip = e.tripId ? tripById(e.tripId) : undefined
@@ -61,6 +61,8 @@ export default function Finances() {
         lane.includes(q)
       )
     })
+    // Newest first; ties keep the order they were logged in.
+    return matches.sort((a, b) => b.date.localeCompare(a.date))
   }, [categoryFilter, query])
 
   const filteredTotal = useMemo(
