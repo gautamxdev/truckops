@@ -183,14 +183,16 @@ export default function Trucks() {
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
               <tr>
-                <th className="px-5 py-3 font-medium">Plate</th>
-                <th className="px-5 py-3 font-medium">Model</th>
-                <th className="px-5 py-3 font-medium">Capacity</th>
-                <th className="px-5 py-3 font-medium">Status</th>
-                <th className="px-5 py-3 font-medium">Fitness</th>
-                <th className="px-5 py-3 font-medium">Insurance</th>
-                <th className="px-5 py-3 font-medium">Odometer</th>
-                <th className="px-5 py-3 font-medium">Since service</th>
+                <th scope="col" className="px-5 py-3 font-medium">Plate</th>
+                <th scope="col" className="px-5 py-3 font-medium">Model</th>
+                <th scope="col" className="px-5 py-3 font-medium">Capacity</th>
+                <th scope="col" className="px-5 py-3 font-medium">Status</th>
+                <th scope="col" className="px-5 py-3 font-medium">Fitness</th>
+                <th scope="col" className="px-5 py-3 font-medium">Insurance</th>
+                <th scope="col" className="px-5 py-3 font-medium">Odometer</th>
+                <th scope="col" className="px-5 py-3 font-medium" title={`Service every ${SERVICE_INTERVAL_KM.toLocaleString('en-IN')} km`}>
+                  Since service
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -239,7 +241,7 @@ export default function Trucks() {
                         {t.odometerKm.toLocaleString('en-IN')} km
                         {t.status === 'maintenance' ? (
                           <span className="ml-2 inline-flex items-center gap-1 text-orange-600 text-xs">
-                            <Wrench className="h-3 w-3" /> workshop
+                            <Wrench className="h-3 w-3" aria-hidden="true" /> workshop
                           </span>
                         ) : null}
                       </td>
@@ -247,7 +249,17 @@ export default function Trucks() {
                         <span className={serviceTone}>
                           {since.toLocaleString('en-IN')} km
                           {due ? (
-                            <span className="ml-1.5 inline-flex rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-800">
+                            <span className="sr-only">
+                              {' '}
+                              (service overdue, interval{' '}
+                              {SERVICE_INTERVAL_KM.toLocaleString('en-IN')} km)
+                            </span>
+                          ) : null}
+                          {due ? (
+                            <span
+                              className="ml-1.5 inline-flex rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-800"
+                              aria-hidden="true"
+                            >
                               due
                             </span>
                           ) : null}
