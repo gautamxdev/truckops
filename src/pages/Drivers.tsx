@@ -5,6 +5,7 @@ import { drivers, truckById } from '../data/mock'
 import type { DriverStatus } from '../types'
 
 import { dueInLabel, formatDateIn, isDueSoon, isExpired } from '../utils/dates'
+import { plateMatches } from '../utils/plates'
 
 const STATUS_FILTERS: { id: 'all' | DriverStatus; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -70,7 +71,7 @@ export default function Drivers() {
       if (!q) return true
       const plate = d.assignedTruckId ? truckById(d.assignedTruckId)?.plate : undefined
       return (
-        (plate?.toLowerCase().includes(q) ?? false) ||
+        plateMatches(plate, q) ||
         d.name.toLowerCase().includes(q) ||
         d.phone.toLowerCase().includes(q) ||
         d.homeBase.toLowerCase().includes(q) ||

@@ -5,6 +5,7 @@ import { trucks } from '../data/mock'
 import type { TruckStatus } from '../types'
 
 import { dueInLabel, formatDateIn, isDueSoon, isExpired } from '../utils/dates'
+import { plateMatches } from '../utils/plates'
 
 const SERVICE_INTERVAL_KM = 10000
 
@@ -82,7 +83,7 @@ export default function Trucks() {
       if (alertsOnly && !needsAttention(t)) return false
       if (!q) return true
       return (
-        t.plate.toLowerCase().includes(q) ||
+        plateMatches(t.plate, q) ||
         t.model.toLowerCase().includes(q)
       )
     })

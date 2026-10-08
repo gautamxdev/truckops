@@ -5,6 +5,7 @@ import { driverById, formatInr, trips, truckById } from '../data/mock'
 import type { Trip, TripStatus } from '../types'
 
 import { formatDateIn, todayIso } from '../utils/dates'
+import { plateMatches } from '../utils/plates'
 
 const STATUS_FILTERS: { id: 'all' | TripStatus; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -87,7 +88,7 @@ export default function Trips() {
         t.origin.toLowerCase().includes(q) ||
         t.destination.toLowerCase().includes(q) ||
         t.cargo.toLowerCase().includes(q) ||
-        (truck?.plate.toLowerCase().includes(q) ?? false) ||
+        plateMatches(truck?.plate, q) ||
         (driver?.name.toLowerCase().includes(q) ?? false)
       )
     })
