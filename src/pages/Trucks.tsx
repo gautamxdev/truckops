@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Search, Wrench } from 'lucide-react'
 import StatusBadge from '../components/StatusBadge'
 import { trucks } from '../data/mock'
-import type { TruckStatus } from '../types'
+import type { Truck, TruckStatus } from '../types'
 
 import { dueInLabel, formatDateIn, isDueSoon, isExpired } from '../utils/dates'
 import { plateMatches } from '../utils/plates'
@@ -37,6 +37,32 @@ const STATUS_FILTERS: { id: 'all' | TruckStatus; label: string }[] = [
   { id: 'maintenance', label: 'Workshop' },
   { id: 'idle', label: 'Idle' },
 ]
+
+type TruckSort = 'plate_asc' | 'capacity_desc' | 'service_desc' | 'odometer_desc'
+
+const SORT_OPTIONS: { id: TruckSort; label: string }[] = [
+  { id: 'plate_asc', label: 'Plate A–Z' },
+  { id: 'capacity_desc', label: 'Highest capacity' },
+  { id: 'service_desc', label: 'Most km since service' },
+  { id: 'odometer_desc', label: 'Highest odometer' },
+]
+
+function compareTrucks(a: Truck, b: Truck, sort: TruckSort) {
+  switch (sort) {
+    case 'capacity_desc':
+      return b.capacityTons - a.capacityTons
+    case 'service_desc':
+      return (
+        kmSinceService(b.odometerKm, b.lastServiceKm) -
+        kmSinceService(a.odometerKm, a.lastServiceKm)
+      )
+    case 'odometer_desc':
+      return b.odometerKm - a.odometerKm
+    case 'plate_asc':
+    default:
+      return a.plate.localeCompare(b.plate)
+  }
+}
 
 function DocDate({ value, label }: { value: string; label: string }) {
   const expired = isExpired(value)
@@ -75,10 +101,11 @@ export default function Trucks() {
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | TruckStatus>('all')
   const [alertsOnly, setAlertsOnly] = useState(false)
+  const [sort, setSort] = useState<TruckSort>('plate_asc')
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return trucks.filter((t) => {
+    const matches = trucks.filter((t) => {
       if (statusFilter !== 'all' && t.status !== statusFilter) return false
       if (alertsOnly && !needsAttention(t)) return false
       if (!q) return true
@@ -87,7 +114,8 @@ export default function Trucks() {
         t.model.toLowerCase().includes(q)
       )
     })
-  }, [query, statusFilter, alertsOnly])
+    return matches.sort((a, b) => compareTrucks(a, b, sort))
+  }, [query, statusFilter, alertsOnly, sort])
 
   const serviceDueCount = useMemo(
     () => trucks.filter((t) => needsService(t.odometerKm, t.lastServiceKm)).length,
@@ -175,6 +203,21 @@ export default function Trucks() {
               Needs attention ({alertCount})
             </button>
           ) : null}
+          <label htmlFor="truck-sort" className="sr-only">
+            Sort trucks
+          </label>
+          <select
+            id="truck-sort"
+            value={sort}
+            onChange={(e) => setSort(e.target.value as TruckSort)}
+            className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/40"
+          >
+            {SORT_OPTIONS.map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.label}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
