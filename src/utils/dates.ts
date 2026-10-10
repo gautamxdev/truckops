@@ -46,3 +46,16 @@ export function formatDateIn(isoDate: string): string {
     year: 'numeric',
   }).format(d)
 }
+
+/** Whole calendar days past an ISO date (0 if still on/before today). */
+export function daysOverdue(isoDate: string, today = todayIso()): number {
+  return Math.max(0, -daysUntil(isoDate, today))
+}
+
+/** Short lateness label for overdue ETAs, e.g. "1d late", "30d late". */
+export function overdueByLabel(isoDate: string, today = todayIso()): string {
+  const days = daysOverdue(isoDate, today)
+  if (days <= 0) return 'today'
+  if (days === 1) return '1d late'
+  return `${days}d late`
+}

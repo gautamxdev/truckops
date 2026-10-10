@@ -11,7 +11,7 @@ import {
   driverById,
 } from '../data/mock'
 import type { Trip, Truck as FleetTruck } from '../types'
-import { formatDateIn, isDueSoon, isExpired, todayIso } from '../utils/dates'
+import { formatDateIn, isDueSoon, isExpired, overdueByLabel, todayIso } from '../utils/dates'
 
 const SERVICE_INTERVAL_KM = 10000
 
@@ -185,7 +185,7 @@ export default function Dashboard() {
                       {overdue ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-800">
                           <AlertTriangle className="h-3 w-3" aria-hidden="true" />
-                          ETA overdue
+                          ETA {overdueByLabel(trip.etaDate)}
                         </span>
                       ) : null}
                     </div>
@@ -199,7 +199,7 @@ export default function Dashboard() {
                     >
                       ETA {formatDateIn(trip.etaDate)}
                       {overdue ? (
-                        <span className="sr-only"> (ETA overdue)</span>
+                        <span className="sr-only"> (ETA {overdueByLabel(trip.etaDate)})</span>
                       ) : null}
                     </p>
                   </div>
