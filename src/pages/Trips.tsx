@@ -31,6 +31,14 @@ function marginPct(trip: Trip) {
   return Math.round((margin(trip) / trip.freightInr) * 100)
 }
 
+/** Thin margin after diesel + toll — flag lanes that barely cover variable cost. */
+const THIN_MARGIN_PCT = 25
+
+function isThinMargin(trip: Trip) {
+  const pct = marginPct(trip)
+  return pct != null && pct < THIN_MARGIN_PCT
+}
+
 function dieselPerKm(trip: Trip) {
   if (trip.distanceKm <= 0) return null
   return Math.round(trip.dieselInr / trip.distanceKm)
@@ -74,6 +82,7 @@ export default function Trips() {
   const [statusFilter, setStatusFilter] = useState<'all' | TripStatus>('all')
   const [query, setQuery] = useState('')
   const [overdueOnly, setOverdueOnly] = useState(false)
+  const [thinMarginOnly, setThinMarginOnly] = useState(false)
   const [sort, setSort] = useState<TripSort>('departure_desc')
 
   const filtered = useMemo(() => {
@@ -81,6 +90,7 @@ export default function Trips() {
     const matches = trips.filter((t) => {
       if (statusFilter !== 'all' && t.status !== statusFilter) return false
       if (overdueOnly && !isEtaOverdue(t)) return false
+      if (thinMarginOnly && !isThinMargin(t)) return false
       if (!q) return true
       const truck = truckById(t.truckId)
       const driver = driverById(t.driverId)
@@ -93,10 +103,15 @@ export default function Trips() {
       )
     })
     return matches.sort((a, b) => compareTrips(a, b, sort))
-  }, [statusFilter, query, overdueOnly, sort])
+  }, [statusFilter, query, overdueOnly, thinMarginOnly, sort])
 
   const overdueCount = useMemo(
     () => trips.filter((t) => isEtaOverdue(t)).length,
+    [],
+  )
+
+  const thinMarginCount = useMemo(
+    () => trips.filter((t) => isThinMargin(t)).length,
     [],
   )
 
@@ -194,12 +209,26 @@ export default function Trips() {
               Overdue ETA ({overdueCount})
             </button>
           ) : null}
+          {thinMarginCount > 0 ? (
+            <button
+              type="button"
+              aria-pressed={thinMarginOnly}
+              onClick={() => setThinMarginOnly((v) => !v)}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 ${
+                thinMarginOnly
+                  ? 'bg-amber-600 text-white'
+                  : 'bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100'
+              }`}
+            >
+              Thin margin &lt;{THIN_MARGIN_PCT}% ({thinMarginCount})
+            </button>
+          ) : null}
         </div>
       </div>
 
       {filtered.length === 0 ? (
         <div className="rounded-xl border border-slate-200 bg-white px-5 py-10 text-center text-sm text-slate-500 shadow-sm">
-          No trips match this search, status, or overdue ETA filter.
+          No trips match this search, status, overdue ETA, or thin-margin filter.
         </div>
       ) : (
         <div className="space-y-3">
@@ -212,11 +241,12 @@ export default function Trips() {
             const mp = marginPct(trip)
             const due = balanceDue(trip)
             const overdue = isEtaOverdue(trip)
+            const thin = isThinMargin(trip)
             return (
               <div
                 key={trip.id}
                 className={`rounded-xl border bg-white p-5 shadow-sm ${
-                  overdue ? 'border-red-200' : 'border-slate-200'
+                  overdue ? 'border-red-200' : thin ? 'border-amber-200' : 'border-slate-200'
                 }`}
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -230,6 +260,15 @@ export default function Trips() {
                         <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-800">
                           <AlertTriangle className="h-3 w-3" aria-hidden="true" />
                           ETA {overdueByLabel(trip.etaDate)}
+                        </span>
+                      ) : null}
+                      {thin ? (
+                        <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-900">
+                          Thin margin
+                          <span className="sr-only">
+                            {' '}
+                            (under {THIN_MARGIN_PCT}% after diesel and toll)
+                          </span>
                         </span>
                       ) : null}
                     </div>
