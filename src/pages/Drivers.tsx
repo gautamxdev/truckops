@@ -62,12 +62,14 @@ export default function Drivers() {
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | DriverStatus>('all')
   const [licenceAlertsOnly, setLicenceAlertsOnly] = useState(false)
+  const [unassignedOnly, setUnassignedOnly] = useState(false)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     return drivers.filter((d) => {
       if (statusFilter !== 'all' && d.status !== statusFilter) return false
       if (licenceAlertsOnly && !hasLicenceAlert(d.licenceExpiry)) return false
+      if (unassignedOnly && d.assignedTruckId) return false
       if (!q) return true
       const plate = d.assignedTruckId ? truckById(d.assignedTruckId)?.plate : undefined
       return (
@@ -78,7 +80,7 @@ export default function Drivers() {
         d.licenceNo.toLowerCase().includes(q)
       )
     })
-  }, [query, statusFilter, licenceAlertsOnly])
+  }, [query, statusFilter, licenceAlertsOnly, unassignedOnly])
 
   const expiredCount = useMemo(
     () => drivers.filter((d) => isExpired(d.licenceExpiry)).length,
@@ -87,6 +89,11 @@ export default function Drivers() {
 
   const licenceAlertCount = useMemo(
     () => drivers.filter((d) => hasLicenceAlert(d.licenceExpiry)).length,
+    [],
+  )
+
+  const unassignedCount = useMemo(
+    () => drivers.filter((d) => !d.assignedTruckId).length,
     [],
   )
 
@@ -169,12 +176,26 @@ export default function Drivers() {
               Licence alerts ({licenceAlertCount})
             </button>
           ) : null}
+          {unassignedCount > 0 ? (
+            <button
+              type="button"
+              aria-pressed={unassignedOnly}
+              onClick={() => setUnassignedOnly((v) => !v)}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 ${
+                unassignedOnly
+                  ? 'bg-slate-900 text-white'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              Unassigned ({unassignedCount})
+            </button>
+          ) : null}
         </div>
       </div>
 
       {filtered.length === 0 ? (
         <div className="rounded-xl border border-slate-200 bg-white px-5 py-10 text-center text-sm text-slate-500 shadow-sm">
-          No drivers match this search, status, or licence alert filter.
+          No drivers match this search, status, licence alert, or unassigned filter.
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
