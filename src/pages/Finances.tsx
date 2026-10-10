@@ -32,6 +32,14 @@ const CATEGORY_FILTERS: { id: 'all' | ExpenseCategory; label: string }[] = [
   { id: 'other', label: 'Other' },
 ]
 
+type ExpenseScope = 'all' | 'trip' | 'fleet'
+
+const SCOPE_FILTERS: { id: ExpenseScope; label: string }[] = [
+  { id: 'all', label: 'All scopes' },
+  { id: 'trip', label: 'Trip-linked' },
+  { id: 'fleet', label: 'Fleet / ops' },
+]
+
 const COST_MIX_ROWS = [
   { label: 'Diesel', value: financeSummary.dieselInr, color: 'bg-amber-500' },
   { label: 'Toll', value: financeSummary.tollInr, color: 'bg-sky-500' },
@@ -42,6 +50,7 @@ const COST_MIX_TOTAL = COST_MIX_ROWS.reduce((s, row) => s + row.value, 0)
 
 export default function Finances() {
   const [categoryFilter, setCategoryFilter] = useState<'all' | ExpenseCategory>('all')
+  const [scopeFilter, setScopeFilter] = useState<ExpenseScope>('all')
   const [query, setQuery] = useState('')
 
   const settledFreight = trips
@@ -52,6 +61,8 @@ export default function Finances() {
     const q = query.trim().toLowerCase()
     const matches = expenses.filter((e) => {
       if (categoryFilter !== 'all' && e.category !== categoryFilter) return false
+      if (scopeFilter === 'trip' && !e.tripId) return false
+      if (scopeFilter === 'fleet' && e.tripId) return false
       if (!q) return true
       const trip = e.tripId ? tripById(e.tripId) : undefined
       const lane = trip ? `${trip.origin} ${trip.destination}`.toLowerCase() : ''
@@ -63,7 +74,7 @@ export default function Finances() {
     })
     // Newest first; ties keep the order they were logged in.
     return matches.sort((a, b) => b.date.localeCompare(a.date))
-  }, [categoryFilter, query])
+  }, [categoryFilter, scopeFilter, query])
 
   const filteredTotal = useMemo(
     () => filteredExpenses.reduce((s, e) => s + e.amountInr, 0),
@@ -184,10 +195,34 @@ export default function Finances() {
                 )
               })}
             </div>
+            <div
+              className="flex flex-wrap gap-1.5"
+              role="group"
+              aria-label="Filter expenses by trip vs fleet scope"
+            >
+              {SCOPE_FILTERS.map((f) => {
+                const active = scopeFilter === f.id
+                return (
+                  <button
+                    key={f.id}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => setScopeFilter(f.id)}
+                    className={`rounded-full px-3 py-1.5 text-xs font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 ${
+                      active
+                        ? 'bg-amber-500 text-slate-950'
+                        : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                )
+              })}
+            </div>
           </div>
           {filteredExpenses.length === 0 ? (
             <p className="px-5 py-10 text-center text-sm text-slate-500">
-              No expenses match this search or category filter.
+              No expenses match this search, category, or scope filter.
             </p>
           ) : (
             <ul className="divide-y divide-slate-100">
