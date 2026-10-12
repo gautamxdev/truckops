@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { MessageCircle, Search } from 'lucide-react'
 import StatusBadge from '../components/StatusBadge'
 import { drivers, truckById } from '../data/mock'
-import type { DriverStatus } from '../types'
+import type { Driver, DriverStatus } from '../types'
 
 import { dueInLabel, formatDateIn, isDueSoon, isExpired } from '../utils/dates'
 import { plateMatches } from '../utils/plates'
@@ -13,6 +13,26 @@ const STATUS_FILTERS: { id: 'all' | DriverStatus; label: string }[] = [
   { id: 'available', label: 'Available' },
   { id: 'off_duty', label: 'Off duty' },
 ]
+
+type DriverSort = 'name_asc' | 'experience_desc' | 'licence_asc'
+
+const SORT_OPTIONS: { id: DriverSort; label: string }[] = [
+  { id: 'name_asc', label: 'Name A–Z' },
+  { id: 'experience_desc', label: 'Most experience' },
+  { id: 'licence_asc', label: 'Licence expiring soonest' },
+]
+
+function compareDrivers(a: Driver, b: Driver, sort: DriverSort) {
+  switch (sort) {
+    case 'experience_desc':
+      return b.experienceYears - a.experienceYears
+    case 'licence_asc':
+      return a.licenceExpiry.localeCompare(b.licenceExpiry)
+    case 'name_asc':
+    default:
+      return a.name.localeCompare(b.name)
+  }
+}
 
 function hasLicenceAlert(licenceExpiry: string) {
   return isExpired(licenceExpiry) || isDueSoon(licenceExpiry)
@@ -63,10 +83,11 @@ export default function Drivers() {
   const [statusFilter, setStatusFilter] = useState<'all' | DriverStatus>('all')
   const [licenceAlertsOnly, setLicenceAlertsOnly] = useState(false)
   const [unassignedOnly, setUnassignedOnly] = useState(false)
+  const [sort, setSort] = useState<DriverSort>('name_asc')
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return drivers.filter((d) => {
+    const matches = drivers.filter((d) => {
       if (statusFilter !== 'all' && d.status !== statusFilter) return false
       if (licenceAlertsOnly && !hasLicenceAlert(d.licenceExpiry)) return false
       if (unassignedOnly && d.assignedTruckId) return false
@@ -80,7 +101,8 @@ export default function Drivers() {
         d.licenceNo.toLowerCase().includes(q)
       )
     })
-  }, [query, statusFilter, licenceAlertsOnly, unassignedOnly])
+    return matches.sort((a, b) => compareDrivers(a, b, sort))
+  }, [query, statusFilter, licenceAlertsOnly, unassignedOnly, sort])
 
   const expiredCount = useMemo(
     () => drivers.filter((d) => isExpired(d.licenceExpiry)).length,
@@ -162,6 +184,21 @@ export default function Drivers() {
               )
             })}
           </div>
+          <label htmlFor="driver-sort" className="sr-only">
+            Sort drivers
+          </label>
+          <select
+            id="driver-sort"
+            value={sort}
+            onChange={(e) => setSort(e.target.value as DriverSort)}
+            className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/40"
+          >
+            {SORT_OPTIONS.map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.label}
+              </option>
+            ))}
+          </select>
           {licenceAlertCount > 0 ? (
             <button
               type="button"
