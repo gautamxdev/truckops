@@ -17,6 +17,11 @@ function needsService(odometerKm: number, lastServiceKm: number) {
   return kmSinceService(odometerKm, lastServiceKm) >= SERVICE_INTERVAL_KM
 }
 
+/** Km remaining until the next service (negative once overdue). */
+function kmUntilService(odometerKm: number, lastServiceKm: number) {
+  return SERVICE_INTERVAL_KM - kmSinceService(odometerKm, lastServiceKm)
+}
+
 function needsAttention(t: {
   fitnessExpiry: string
   insuranceExpiry: string
@@ -234,7 +239,7 @@ export default function Trucks() {
                 <th scope="col" className="px-5 py-3 font-medium">Insurance</th>
                 <th scope="col" className="px-5 py-3 font-medium">Odometer</th>
                 <th scope="col" className="px-5 py-3 font-medium" title={`Service every ${SERVICE_INTERVAL_KM.toLocaleString('en-IN')} km`}>
-                  Since service
+                  Until service
                 </th>
               </tr>
             </thead>
@@ -251,6 +256,7 @@ export default function Trucks() {
               ) : (
                 filtered.map((t) => {
                   const since = kmSinceService(t.odometerKm, t.lastServiceKm)
+                  const until = kmUntilService(t.odometerKm, t.lastServiceKm)
                   const due = needsService(t.odometerKm, t.lastServiceKm)
                   const serviceTone = due
                     ? 'text-red-700 font-medium'
@@ -290,20 +296,27 @@ export default function Trucks() {
                       </td>
                       <td className="px-5 py-3.5 whitespace-nowrap">
                         <span className={serviceTone}>
-                          {since.toLocaleString('en-IN')} km
-                          {due ? (
-                            <span className="sr-only">
-                              {' '}
-                              (service overdue, interval{' '}
-                              {SERVICE_INTERVAL_KM.toLocaleString('en-IN')} km)
-                            </span>
-                          ) : null}
+                          {due
+                            ? `${Math.abs(until).toLocaleString('en-IN')} km overdue`
+                            : `${until.toLocaleString('en-IN')} km left`}
+                          <span className="sr-only">
+                            {' '}
+                            ({since.toLocaleString('en-IN')} km since last service, interval{' '}
+                            {SERVICE_INTERVAL_KM.toLocaleString('en-IN')} km)
+                          </span>
                           {due ? (
                             <span
                               className="ml-1.5 inline-flex rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-800"
                               aria-hidden="true"
                             >
                               due
+                            </span>
+                          ) : since >= SERVICE_INTERVAL_KM * 0.8 ? (
+                            <span
+                              className="ml-1.5 inline-flex rounded-full bg-orange-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-orange-800"
+                              aria-hidden="true"
+                            >
+                              soon
                             </span>
                           ) : null}
                         </span>
