@@ -40,6 +40,13 @@ const SCOPE_FILTERS: { id: ExpenseScope; label: string }[] = [
   { id: 'fleet', label: 'Fleet / ops' },
 ]
 
+type ExpenseSort = 'newest' | 'amount'
+
+const SORT_OPTIONS: { id: ExpenseSort; label: string }[] = [
+  { id: 'newest', label: 'Newest first' },
+  { id: 'amount', label: 'Highest amount' },
+]
+
 const COST_MIX_ROWS = [
   { label: 'Diesel', value: financeSummary.dieselInr, color: 'bg-amber-500' },
   { label: 'Toll', value: financeSummary.tollInr, color: 'bg-sky-500' },
@@ -52,6 +59,7 @@ export default function Finances() {
   const [categoryFilter, setCategoryFilter] = useState<'all' | ExpenseCategory>('all')
   const [scopeFilter, setScopeFilter] = useState<ExpenseScope>('all')
   const [query, setQuery] = useState('')
+  const [sortBy, setSortBy] = useState<ExpenseSort>('newest')
 
   const settledFreight = trips
     .filter((t) => t.status === 'settled' || t.status === 'delivered')
@@ -72,9 +80,12 @@ export default function Finances() {
         lane.includes(q)
       )
     })
-    // Newest first; ties keep the order they were logged in.
-    return matches.sort((a, b) => b.date.localeCompare(a.date))
-  }, [categoryFilter, scopeFilter, query])
+    // Ties fall back to newest first, then the order they were logged in.
+    return matches.sort((a, b) => {
+      if (sortBy === 'amount' && a.amountInr !== b.amountInr) return b.amountInr - a.amountInr
+      return b.date.localeCompare(a.date)
+    })
+  }, [categoryFilter, scopeFilter, query, sortBy])
 
   const filteredTotal = useMemo(
     () => filteredExpenses.reduce((s, e) => s + e.amountInr, 0),
@@ -154,22 +165,39 @@ export default function Finances() {
                 {formatInr(filteredTotal)}
               </p>
             </div>
-            <div className="relative w-full sm:max-w-xs">
-              <Search
-                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
-                aria-hidden="true"
-              />
-              <label htmlFor="expense-search" className="sr-only">
-                Search expenses by description, category, or trip lane
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative w-full sm:max-w-xs">
+                <Search
+                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                  aria-hidden="true"
+                />
+                <label htmlFor="expense-search" className="sr-only">
+                  Search expenses by description, category, or trip lane
+                </label>
+                <input
+                  id="expense-search"
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search description, category, lane…"
+                  className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/40"
+                />
+              </div>
+              <label htmlFor="expense-sort" className="sr-only">
+                Sort expenses
               </label>
-              <input
-                id="expense-search"
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search description, category, lane…"
-                className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/40"
-              />
+              <select
+                id="expense-sort"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as ExpenseSort)}
+                className="rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm text-slate-700 shadow-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/40"
+              >
+                {SORT_OPTIONS.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
             </div>
             <div
               className="flex flex-wrap gap-1.5"
