@@ -11,7 +11,7 @@ import {
   driverById,
 } from '../data/mock'
 import type { Trip, Truck as FleetTruck } from '../types'
-import { formatDateIn, isDueSoon, isExpired, overdueByLabel, todayIso } from '../utils/dates'
+import { daysUntil, formatDateIn, isDueSoon, isExpired, overdueByLabel, todayIso } from '../utils/dates'
 
 const SERVICE_INTERVAL_KM = 10000
 
@@ -36,12 +36,17 @@ type DocAlert = {
   kind: 'fitness' | 'insurance' | 'service' | 'licence'
   detail: string
   severity: 'expired' | 'soon' | 'service'
+  /** Orders alerts within a severity: oldest/nearest date first, or most km overdue first. */
+  sortKey: number
 }
 
 export default function Dashboard() {
   const onTrip = trucks.filter((t) => t.status === 'on_trip').length
   const available = trucks.filter((t) => t.status === 'available').length
-  const activeTrips = trips.filter((t) => t.status === 'in_transit' || t.status === 'planned')
+  // Soonest ETA first so overdue and arriving-today trips sit at the top.
+  const activeTrips = trips
+    .filter((t) => t.status === 'in_transit' || t.status === 'planned')
+    .sort((a, b) => a.etaDate.localeCompare(b.etaDate))
   const overdueEtaCount = activeTrips.filter((t) => isEtaOverdue(t)).length
 
   const docAlerts: DocAlert[] = []
@@ -53,6 +58,7 @@ export default function Dashboard() {
         kind: 'fitness',
         detail: `fitness expired ${formatDateIn(t.fitnessExpiry)}`,
         severity: 'expired',
+        sortKey: daysUntil(t.fitnessExpiry),
       })
     } else if (isDueSoon(t.fitnessExpiry)) {
       docAlerts.push({
@@ -61,6 +67,7 @@ export default function Dashboard() {
         kind: 'fitness',
         detail: `fitness due ${formatDateIn(t.fitnessExpiry)}`,
         severity: 'soon',
+        sortKey: daysUntil(t.fitnessExpiry),
       })
     }
     if (isExpired(t.insuranceExpiry)) {
@@ -70,6 +77,7 @@ export default function Dashboard() {
         kind: 'insurance',
         detail: `insurance expired ${formatDateIn(t.insuranceExpiry)}`,
         severity: 'expired',
+        sortKey: daysUntil(t.insuranceExpiry),
       })
     } else if (isDueSoon(t.insuranceExpiry)) {
       docAlerts.push({
@@ -78,6 +86,7 @@ export default function Dashboard() {
         kind: 'insurance',
         detail: `insurance due ${formatDateIn(t.insuranceExpiry)}`,
         severity: 'soon',
+        sortKey: daysUntil(t.insuranceExpiry),
       })
     }
     if (needsService(t)) {
@@ -87,6 +96,7 @@ export default function Dashboard() {
         kind: 'service',
         detail: `${kmSinceService(t).toLocaleString('en-IN')} km since service`,
         severity: 'service',
+        sortKey: -kmSinceService(t),
       })
     }
   }
@@ -99,6 +109,7 @@ export default function Dashboard() {
         kind: 'licence',
         detail: `licence expired ${formatDateIn(d.licenceExpiry)}`,
         severity: 'expired',
+        sortKey: daysUntil(d.licenceExpiry),
       })
     } else if (isDueSoon(d.licenceExpiry)) {
       docAlerts.push({
@@ -107,13 +118,14 @@ export default function Dashboard() {
         kind: 'licence',
         detail: `licence due ${formatDateIn(d.licenceExpiry)}`,
         severity: 'soon',
+        sortKey: daysUntil(d.licenceExpiry),
       })
     }
   }
 
   docAlerts.sort((a, b) => {
     const rank = { expired: 0, soon: 1, service: 2 }
-    return rank[a.severity] - rank[b.severity]
+    return rank[a.severity] - rank[b.severity] || a.sortKey - b.sortKey
   })
 
   return (
