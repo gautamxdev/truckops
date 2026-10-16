@@ -1,4 +1,4 @@
-import { Truck, Users, MapPinned, IndianRupee, Fuel, AlertTriangle } from 'lucide-react'
+import { Truck, Users, MapPinned, IndianRupee, Fuel, AlertTriangle, Wallet } from 'lucide-react'
 import StatCard from '../components/StatCard'
 import StatusBadge from '../components/StatusBadge'
 import {
@@ -48,6 +48,15 @@ export default function Dashboard() {
     .filter((t) => t.status === 'in_transit' || t.status === 'planned')
     .sort((a, b) => a.etaDate.localeCompare(b.etaDate))
   const overdueEtaCount = activeTrips.filter((t) => isEtaOverdue(t)).length
+
+  // Freight still owed after advance on anything not yet settled.
+  const unsettledWithBalance = trips.filter(
+    (t) => t.status !== 'settled' && t.freightInr - t.advanceInr > 0,
+  )
+  const toCollectInr = unsettledWithBalance.reduce(
+    (sum, t) => sum + (t.freightInr - t.advanceInr),
+    0,
+  )
 
   const docAlerts: DocAlert[] = []
   for (const t of trucks) {
@@ -163,6 +172,29 @@ export default function Dashboard() {
           icon={IndianRupee}
         />
       </div>
+
+      {toCollectInr > 0 ? (
+        <div className="rounded-xl border border-sky-200 bg-sky-50 px-5 py-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 rounded-lg bg-sky-100 text-sky-800 flex items-center justify-center shrink-0">
+              <Wallet className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <div>
+              <h2 className="font-display font-semibold text-sky-950 text-sm">
+                Cash to collect
+              </h2>
+              <p className="text-xs text-sky-800/80 mt-0.5">
+                Freight still due after advance on{' '}
+                {unsettledWithBalance.length} unsettled trip
+                {unsettledWithBalance.length === 1 ? '' : 's'}
+              </p>
+            </div>
+          </div>
+          <p className="font-display text-xl font-bold text-sky-950">
+            {formatInr(toCollectInr)}
+          </p>
+        </div>
+      ) : null}
 
       <div className="grid lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 rounded-xl border border-slate-200 bg-white shadow-sm">
