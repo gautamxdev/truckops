@@ -35,6 +35,16 @@ function needsAttention(t: {
   )
 }
 
+/** Fitness or insurance expired / due soon — docs only, not service km. */
+function hasDocsAlert(t: { fitnessExpiry: string; insuranceExpiry: string }) {
+  return (
+    isExpired(t.fitnessExpiry) ||
+    isDueSoon(t.fitnessExpiry) ||
+    isExpired(t.insuranceExpiry) ||
+    isDueSoon(t.insuranceExpiry)
+  )
+}
+
 const STATUS_FILTERS: { id: 'all' | TruckStatus; label: string }[] = [
   { id: 'all', label: 'All' },
   { id: 'on_trip', label: 'On trip' },
@@ -106,6 +116,7 @@ export default function Trucks() {
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | TruckStatus>('all')
   const [alertsOnly, setAlertsOnly] = useState(false)
+  const [docsOnly, setDocsOnly] = useState(false)
   const [sort, setSort] = useState<TruckSort>('plate_asc')
 
   const filtered = useMemo(() => {
@@ -113,6 +124,7 @@ export default function Trucks() {
     const matches = trucks.filter((t) => {
       if (statusFilter !== 'all' && t.status !== statusFilter) return false
       if (alertsOnly && !needsAttention(t)) return false
+      if (docsOnly && !hasDocsAlert(t)) return false
       if (!q) return true
       return (
         plateMatches(t.plate, q) ||
@@ -120,7 +132,7 @@ export default function Trucks() {
       )
     })
     return matches.sort((a, b) => compareTrucks(a, b, sort))
-  }, [query, statusFilter, alertsOnly, sort])
+  }, [query, statusFilter, alertsOnly, docsOnly, sort])
 
   const serviceDueCount = useMemo(
     () => trucks.filter((t) => needsService(t.odometerKm, t.lastServiceKm)).length,
@@ -128,6 +140,8 @@ export default function Trucks() {
   )
 
   const alertCount = useMemo(() => trucks.filter((t) => needsAttention(t)).length, [])
+
+  const docsAlertCount = useMemo(() => trucks.filter((t) => hasDocsAlert(t)).length, [])
 
   return (
     <div className="space-y-6">
@@ -208,6 +222,20 @@ export default function Trucks() {
               Needs attention ({alertCount})
             </button>
           ) : null}
+          {docsAlertCount > 0 ? (
+            <button
+              type="button"
+              aria-pressed={docsOnly}
+              onClick={() => setDocsOnly((v) => !v)}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 ${
+                docsOnly
+                  ? 'bg-red-700 text-white'
+                  : 'bg-red-50 text-red-800 border border-red-200 hover:bg-red-100'
+              }`}
+            >
+              Docs alert ({docsAlertCount})
+            </button>
+          ) : null}
           <label htmlFor="truck-sort" className="sr-only">
             Sort trucks
           </label>
@@ -250,7 +278,7 @@ export default function Trucks() {
                     colSpan={8}
                     className="px-5 py-10 text-center text-sm text-slate-500"
                   >
-                    No trucks match this search, status, or attention filter.
+                    No trucks match this search, status, attention, or docs filter.
                   </td>
                 </tr>
               ) : (
