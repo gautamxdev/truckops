@@ -55,6 +55,11 @@ function balanceDue(trip: Trip) {
   return trip.freightInr - trip.advanceInr
 }
 
+/** Unsettled trips that still owe freight after the driver advance. */
+function hasBalanceDue(trip: Trip) {
+  return trip.status !== 'settled' && balanceDue(trip) > 0
+}
+
 type TripSort = 'departure_desc' | 'eta_asc' | 'margin_pct_desc' | 'balance_desc'
 
 const SORT_OPTIONS: { id: TripSort; label: string }[] = [
@@ -83,6 +88,7 @@ export default function Trips() {
   const [query, setQuery] = useState('')
   const [overdueOnly, setOverdueOnly] = useState(false)
   const [thinMarginOnly, setThinMarginOnly] = useState(false)
+  const [balanceDueOnly, setBalanceDueOnly] = useState(false)
   const [sort, setSort] = useState<TripSort>('departure_desc')
 
   const filtered = useMemo(() => {
@@ -91,6 +97,7 @@ export default function Trips() {
       if (statusFilter !== 'all' && t.status !== statusFilter) return false
       if (overdueOnly && !isEtaOverdue(t)) return false
       if (thinMarginOnly && !isThinMargin(t)) return false
+      if (balanceDueOnly && !hasBalanceDue(t)) return false
       if (!q) return true
       const truck = truckById(t.truckId)
       const driver = driverById(t.driverId)
@@ -103,7 +110,7 @@ export default function Trips() {
       )
     })
     return matches.sort((a, b) => compareTrips(a, b, sort))
-  }, [statusFilter, query, overdueOnly, thinMarginOnly, sort])
+  }, [statusFilter, query, overdueOnly, thinMarginOnly, balanceDueOnly, sort])
 
   const overdueCount = useMemo(
     () => trips.filter((t) => isEtaOverdue(t)).length,
@@ -112,6 +119,11 @@ export default function Trips() {
 
   const thinMarginCount = useMemo(
     () => trips.filter((t) => isThinMargin(t)).length,
+    [],
+  )
+
+  const balanceDueCount = useMemo(
+    () => trips.filter((t) => hasBalanceDue(t)).length,
     [],
   )
 
@@ -223,12 +235,26 @@ export default function Trips() {
               Thin margin &lt;{THIN_MARGIN_PCT}% ({thinMarginCount})
             </button>
           ) : null}
+          {balanceDueCount > 0 ? (
+            <button
+              type="button"
+              aria-pressed={balanceDueOnly}
+              onClick={() => setBalanceDueOnly((v) => !v)}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 ${
+                balanceDueOnly
+                  ? 'bg-sky-700 text-white'
+                  : 'bg-sky-50 text-sky-900 border border-sky-200 hover:bg-sky-100'
+              }`}
+            >
+              Balance due ({balanceDueCount})
+            </button>
+          ) : null}
         </div>
       </div>
 
       {filtered.length === 0 ? (
         <div className="rounded-xl border border-slate-200 bg-white px-5 py-10 text-center text-sm text-slate-500 shadow-sm">
-          No trips match this search, status, overdue ETA, or thin-margin filter.
+          No trips match this search, status, overdue ETA, thin-margin, or balance-due filter.
         </div>
       ) : (
         <div className="space-y-3">
@@ -242,6 +268,7 @@ export default function Trips() {
             const due = balanceDue(trip)
             const overdue = isEtaOverdue(trip)
             const thin = isThinMargin(trip)
+            const owes = hasBalanceDue(trip)
             return (
               <div
                 key={trip.id}
@@ -268,6 +295,15 @@ export default function Trips() {
                           <span className="sr-only">
                             {' '}
                             (under {THIN_MARGIN_PCT}% after diesel and toll)
+                          </span>
+                        </span>
+                      ) : null}
+                      {owes ? (
+                        <span className="inline-flex items-center rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sky-900">
+                          Collect
+                          <span className="sr-only">
+                            {' '}
+                            ({formatInr(due)} still due after advance)
                           </span>
                         </span>
                       ) : null}
