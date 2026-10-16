@@ -47,6 +47,13 @@ const SORT_OPTIONS: { id: ExpenseSort; label: string }[] = [
   { id: 'amount', label: 'Highest amount' },
 ]
 
+/** Flag individual line items that need a second look before approval. */
+const LARGE_EXPENSE_INR = 15000
+
+function isLargeExpense(e: Expense) {
+  return e.amountInr >= LARGE_EXPENSE_INR
+}
+
 const COST_MIX_ROWS = [
   { label: 'Diesel', value: financeSummary.dieselInr, color: 'bg-amber-500' },
   { label: 'Toll', value: financeSummary.tollInr, color: 'bg-sky-500' },
@@ -60,6 +67,7 @@ export default function Finances() {
   const [scopeFilter, setScopeFilter] = useState<ExpenseScope>('all')
   const [query, setQuery] = useState('')
   const [sortBy, setSortBy] = useState<ExpenseSort>('newest')
+  const [largeOnly, setLargeOnly] = useState(false)
 
   const settledFreight = trips
     .filter((t) => t.status === 'settled' || t.status === 'delivered')
@@ -71,6 +79,7 @@ export default function Finances() {
       if (categoryFilter !== 'all' && e.category !== categoryFilter) return false
       if (scopeFilter === 'trip' && !e.tripId) return false
       if (scopeFilter === 'fleet' && e.tripId) return false
+      if (largeOnly && !isLargeExpense(e)) return false
       if (!q) return true
       const trip = e.tripId ? tripById(e.tripId) : undefined
       const lane = trip ? `${trip.origin} ${trip.destination}`.toLowerCase() : ''
@@ -85,11 +94,16 @@ export default function Finances() {
       if (sortBy === 'amount' && a.amountInr !== b.amountInr) return b.amountInr - a.amountInr
       return b.date.localeCompare(a.date)
     })
-  }, [categoryFilter, scopeFilter, query, sortBy])
+  }, [categoryFilter, scopeFilter, query, sortBy, largeOnly])
 
   const filteredTotal = useMemo(
     () => filteredExpenses.reduce((s, e) => s + e.amountInr, 0),
     [filteredExpenses],
+  )
+
+  const largeCount = useMemo(
+    () => expenses.filter((e) => isLargeExpense(e)).length,
+    [],
   )
 
   return (
@@ -246,17 +260,32 @@ export default function Finances() {
                   </button>
                 )
               })}
+              {largeCount > 0 ? (
+                <button
+                  type="button"
+                  aria-pressed={largeOnly}
+                  onClick={() => setLargeOnly((v) => !v)}
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 ${
+                    largeOnly
+                      ? 'bg-violet-700 text-white'
+                      : 'bg-violet-50 text-violet-900 border border-violet-200 hover:bg-violet-100'
+                  }`}
+                >
+                  Large ≥{formatInr(LARGE_EXPENSE_INR)} ({largeCount})
+                </button>
+              ) : null}
             </div>
           </div>
           {filteredExpenses.length === 0 ? (
             <p className="px-5 py-10 text-center text-sm text-slate-500">
-              No expenses match this search, category, or scope filter.
+              No expenses match this search, category, scope, or large-amount filter.
             </p>
           ) : (
             <ul className="divide-y divide-slate-100">
               {filteredExpenses.map((e) => {
                 const Icon = categoryIcon[e.category]
                 const trip = e.tripId ? tripById(e.tripId) : undefined
+                const large = isLargeExpense(e)
                 return (
                   <li key={e.id} className="px-5 py-3.5 flex items-center gap-3 justify-between">
                     <div className="flex items-center gap-3 min-w-0">
@@ -264,7 +293,18 @@ export default function Finances() {
                         <Icon className="h-4 w-4" aria-hidden="true" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-slate-900 truncate">{e.description}</p>
+                        <p className="text-sm font-medium text-slate-900 truncate">
+                          {e.description}
+                          {large ? (
+                            <span className="ml-1.5 inline-flex align-middle rounded-full bg-violet-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-900">
+                              Large
+                              <span className="sr-only">
+                                {' '}
+                                (₹{LARGE_EXPENSE_INR.toLocaleString('en-IN')}+ line item)
+                              </span>
+                            </span>
+                          ) : null}
+                        </p>
                         <p className="text-xs text-slate-500">
                           {categoryLabel[e.category]} · {formatDateIn(e.date)}
                           {trip ? (
