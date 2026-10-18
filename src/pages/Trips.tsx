@@ -112,6 +112,14 @@ export default function Trips() {
     return matches.sort((a, b) => compareTrips(a, b, sort))
   }, [statusFilter, query, overdueOnly, thinMarginOnly, balanceDueOnly, sort])
 
+  const clearFilters = () => {
+    setQuery('')
+    setStatusFilter('all')
+    setOverdueOnly(false)
+    setThinMarginOnly(false)
+    setBalanceDueOnly(false)
+  }
+
   const overdueCount = useMemo(
     () => trips.filter((t) => isEtaOverdue(t)).length,
     [],
@@ -254,7 +262,14 @@ export default function Trips() {
 
       {filtered.length === 0 ? (
         <div className="rounded-xl border border-slate-200 bg-white px-5 py-10 text-center text-sm text-slate-500 shadow-sm">
-          No trips match this search, status, overdue ETA, thin-margin, or balance-due filter.
+          <p>No trips match this search, status, overdue ETA, thin-margin, or balance-due filter.</p>
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="mt-3 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+          >
+            Clear filters
+          </button>
         </div>
       ) : (
         <div className="space-y-3">
