@@ -10,6 +10,7 @@ import {
   Menu,
   X,
 } from 'lucide-react'
+import { currentMonthLabel } from '../utils/dates'
 
 const nav = [
   { to: '/app', end: true, label: 'Dashboard', icon: LayoutDashboard },
@@ -214,7 +215,7 @@ export default function AppLayout() {
             </div>
           </div>
           <div className="flex items-center gap-3 shrink-0">
-            <span className="hidden sm:inline text-xs text-slate-500">Sep 2026</span>
+            <span className="hidden sm:inline text-xs text-slate-500">{currentMonthLabel()}</span>
             <div className="h-8 w-8 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center text-xs font-bold">
               GA
             </div>

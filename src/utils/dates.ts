@@ -59,3 +59,12 @@ export function overdueByLabel(isoDate: string, today = todayIso()): string {
   if (days === 1) return '1d late'
   return `${days}d late`
 }
+
+/** Current month label in India, e.g. "Oct 2026" — for the app header. */
+export function currentMonthLabel(now = new Date()): string {
+  return new Intl.DateTimeFormat('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    month: 'short',
+    year: 'numeric',
+  }).format(now)
+}
