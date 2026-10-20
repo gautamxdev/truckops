@@ -115,6 +115,13 @@ export default function Drivers() {
     return matches.sort((a, b) => compareDrivers(a, b, sort))
   }, [query, statusFilter, licenceAlertsOnly, unassignedOnly, sort])
 
+  const clearFilters = () => {
+    setQuery('')
+    setStatusFilter('all')
+    setLicenceAlertsOnly(false)
+    setUnassignedOnly(false)
+  }
+
   const expiredCount = useMemo(
     () => drivers.filter((d) => isExpired(d.licenceExpiry)).length,
     [],
@@ -243,7 +250,14 @@ export default function Drivers() {
 
       {filtered.length === 0 ? (
         <div className="rounded-xl border border-slate-200 bg-white px-5 py-10 text-center text-sm text-slate-500 shadow-sm">
-          No drivers match this search, status, licence alert, or unassigned filter.
+          <p>No drivers match this search, status, licence alert, or unassigned filter.</p>
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="mt-3 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+          >
+            Clear filters
+          </button>
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
