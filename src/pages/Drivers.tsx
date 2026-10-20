@@ -43,6 +43,16 @@ function phoneDigits(phone: string) {
   return phone.replace(/\D+/g, '')
 }
 
+/**
+ * True when a search looks like a phone number and its digits appear in the driver's phone,
+ * so "9822011455", "+919822011455" and "98220-11455" all find "+91 98220 11455".
+ */
+function phoneMatches(phone: string, query: string) {
+  if (!/^[\d\s+().-]+$/.test(query)) return false
+  const digits = phoneDigits(query)
+  return digits.length >= 4 && phoneDigits(phone).includes(digits)
+}
+
 function whatsappHref(phone: string) {
   const digits = phoneDigits(phone)
   return digits ? `https://wa.me/${digits}` : null
@@ -97,6 +107,7 @@ export default function Drivers() {
         plateMatches(plate, q) ||
         d.name.toLowerCase().includes(q) ||
         d.phone.toLowerCase().includes(q) ||
+        phoneMatches(d.phone, q) ||
         d.homeBase.toLowerCase().includes(q) ||
         d.licenceNo.toLowerCase().includes(q)
       )
