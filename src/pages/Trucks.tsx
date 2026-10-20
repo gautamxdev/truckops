@@ -134,6 +134,13 @@ export default function Trucks() {
     return matches.sort((a, b) => compareTrucks(a, b, sort))
   }, [query, statusFilter, alertsOnly, docsOnly, sort])
 
+  const clearFilters = () => {
+    setQuery('')
+    setStatusFilter('all')
+    setAlertsOnly(false)
+    setDocsOnly(false)
+  }
+
   const serviceDueCount = useMemo(
     () => trucks.filter((t) => needsService(t.odometerKm, t.lastServiceKm)).length,
     [],
@@ -278,7 +285,14 @@ export default function Trucks() {
                     colSpan={8}
                     className="px-5 py-10 text-center text-sm text-slate-500"
                   >
-                    No trucks match this search, status, attention, or docs filter.
+                    <p>No trucks match this search, status, attention, or docs filter.</p>
+                    <button
+                      type="button"
+                      onClick={clearFilters}
+                      className="mt-3 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+                    >
+                      Clear filters
+                    </button>
                   </td>
                 </tr>
               ) : (
