@@ -6,6 +6,7 @@ import type { Driver, DriverStatus } from '../types'
 
 import { dueInLabel, formatDateIn, isDueSoon, isExpired } from '../utils/dates'
 import { plateMatches } from '../utils/plates'
+import { phoneDigits } from '../utils/phone'
 
 const STATUS_FILTERS: { id: 'all' | DriverStatus; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -36,11 +37,6 @@ function compareDrivers(a: Driver, b: Driver, sort: DriverSort) {
 
 function hasLicenceAlert(licenceExpiry: string) {
   return isExpired(licenceExpiry) || isDueSoon(licenceExpiry)
-}
-
-/** Digits-only E.164 for wa.me / tel deep links (Indian mobiles stored as +91 …). */
-function phoneDigits(phone: string) {
-  return phone.replace(/\D+/g, '')
 }
 
 /**

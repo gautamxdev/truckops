@@ -1,4 +1,4 @@
-import { Truck, Users, MapPinned, IndianRupee, Fuel, AlertTriangle, Wallet } from 'lucide-react'
+import { Truck, Users, MapPinned, IndianRupee, Fuel, AlertTriangle, Wallet, Phone } from 'lucide-react'
 import StatCard from '../components/StatCard'
 import StatusBadge from '../components/StatusBadge'
 import {
@@ -12,6 +12,7 @@ import {
 } from '../data/mock'
 import type { Trip, Truck as FleetTruck } from '../types'
 import { daysUntil, formatDateIn, isDueSoon, isExpired, overdueByLabel, todayIso } from '../utils/dates'
+import { telHref } from '../utils/phone'
 
 const SERVICE_INTERVAL_KM = 10000
 
@@ -214,6 +215,7 @@ export default function Dashboard() {
               const truck = truckById(trip.truckId)
               const driver = driverById(trip.driverId)
               const overdue = isEtaOverdue(trip)
+              const callHref = telHref(driver?.phone)
               return (
                 <div
                   key={trip.id}
@@ -248,6 +250,20 @@ export default function Dashboard() {
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
+                    {callHref && driver ? (
+                      <a
+                        href={callHref}
+                        aria-label={`Call ${driver.name} (${driver.phone})`}
+                        title={`Call ${driver.name}`}
+                        className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1 ${
+                          overdue
+                            ? 'border-red-200 bg-white text-red-700 hover:bg-red-50'
+                            : 'border-slate-200 bg-white text-sky-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        <Phone className="h-4 w-4" aria-hidden="true" />
+                      </a>
+                    ) : null}
                     <span className="text-sm font-semibold text-slate-800">
                       {formatInr(trip.freightInr)}
                     </span>
