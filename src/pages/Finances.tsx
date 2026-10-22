@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
 import { Fuel, Receipt, Search, Wrench, Wallet } from 'lucide-react'
 import StatCard from '../components/StatCard'
-import { expenses, financeSummary, formatInr, tripById, trips } from '../data/mock'
+import { expenses, financeSummary, formatInr, tripById, trips, truckById } from '../data/mock'
 import type { Expense } from '../types'
 import { formatDateIn } from '../utils/dates'
+import { plateMatches } from '../utils/plates'
 
 type ExpenseCategory = Expense['category']
 
@@ -83,10 +84,12 @@ export default function Finances() {
       if (!q) return true
       const trip = e.tripId ? tripById(e.tripId) : undefined
       const lane = trip ? `${trip.origin} ${trip.destination}`.toLowerCase() : ''
+      const plate = trip ? truckById(trip.truckId)?.plate : undefined
       return (
         e.description.toLowerCase().includes(q) ||
         categoryLabel[e.category].toLowerCase().includes(q) ||
-        lane.includes(q)
+        lane.includes(q) ||
+        plateMatches(plate, q)
       )
     })
     // Ties fall back to newest first, then the order they were logged in.
@@ -193,14 +196,14 @@ export default function Finances() {
                   aria-hidden="true"
                 />
                 <label htmlFor="expense-search" className="sr-only">
-                  Search expenses by description, category, or trip lane
+                  Search expenses by description, category, trip lane, or truck plate
                 </label>
                 <input
                   id="expense-search"
                   type="search"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search description, category, lane…"
+                  placeholder="Search description, category, lane, plate…"
                   className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/40"
                 />
               </div>
@@ -301,6 +304,7 @@ export default function Finances() {
               {filteredExpenses.map((e) => {
                 const Icon = categoryIcon[e.category]
                 const trip = e.tripId ? tripById(e.tripId) : undefined
+                const plate = trip ? truckById(trip.truckId)?.plate : undefined
                 const large = isLargeExpense(e)
                 return (
                   <li key={e.id} className="px-5 py-3.5 flex items-center gap-3 justify-between">
@@ -327,6 +331,7 @@ export default function Finances() {
                             <span className="text-slate-600">
                               {' '}
                               · {trip.origin} → {trip.destination}
+                              {plate ? ` · ${plate}` : ''}
                             </span>
                           ) : (
                             <span className="text-slate-400"> · fleet / ops</span>
