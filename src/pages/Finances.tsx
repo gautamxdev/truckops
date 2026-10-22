@@ -101,6 +101,13 @@ export default function Finances() {
     [filteredExpenses],
   )
 
+  const clearFilters = () => {
+    setQuery('')
+    setCategoryFilter('all')
+    setScopeFilter('all')
+    setLargeOnly(false)
+  }
+
   const largeCount = useMemo(
     () => expenses.filter((e) => isLargeExpense(e)).length,
     [],
@@ -277,9 +284,18 @@ export default function Finances() {
             </div>
           </div>
           {filteredExpenses.length === 0 ? (
-            <p className="px-5 py-10 text-center text-sm text-slate-500">
-              No expenses match this search, category, scope, or large-amount filter.
-            </p>
+            <div className="px-5 py-10 text-center">
+              <p className="text-sm text-slate-500">
+                No expenses match this search, category, scope, or large-amount filter.
+              </p>
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="mt-3 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+              >
+                Clear filters
+              </button>
+            </div>
           ) : (
             <ul className="divide-y divide-slate-100">
               {filteredExpenses.map((e) => {
