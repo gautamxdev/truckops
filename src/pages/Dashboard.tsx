@@ -210,6 +210,11 @@ export default function Dashboard() {
               ) : null}
             </span>
           </div>
+          {activeTrips.length === 0 ? (
+            <p className="px-5 py-10 text-center text-sm text-slate-500">
+              No planned or in-transit trips right now.
+            </p>
+          ) : (
           <div className="divide-y divide-slate-100">
             {activeTrips.map((trip) => {
               const truck = truckById(trip.truckId)
@@ -273,6 +278,7 @@ export default function Dashboard() {
               )
             })}
           </div>
+          )}
         </div>
 
         <div className="space-y-4">
