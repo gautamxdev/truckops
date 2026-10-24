@@ -6,7 +6,7 @@ import type { Driver, DriverStatus } from '../types'
 
 import { dueInLabel, formatDateIn, isDueSoon, isExpired } from '../utils/dates'
 import { plateMatches } from '../utils/plates'
-import { phoneDigits } from '../utils/phone'
+import { phoneDigits, telHref } from '../utils/phone'
 
 const STATUS_FILTERS: { id: 'all' | DriverStatus; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -261,6 +261,7 @@ export default function Drivers() {
             const truck = d.assignedTruckId ? truckById(d.assignedTruckId) : null
             const licenceBad = hasLicenceAlert(d.licenceExpiry)
             const wa = whatsappHref(d.phone)
+            const tel = telHref(d.phone)
             return (
               <div
                 key={d.id}
@@ -282,12 +283,16 @@ export default function Drivers() {
                     <dt className="text-slate-500">Phone</dt>
                     <dd className="font-medium text-slate-800 text-right space-y-1">
                       <div>
-                        <a
-                          href={`tel:${phoneDigits(d.phone)}`}
-                          className="text-sky-700 hover:text-sky-900 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1 rounded"
-                        >
-                          {d.phone}
-                        </a>
+                        {tel ? (
+                          <a
+                            href={tel}
+                            className="text-sky-700 hover:text-sky-900 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1 rounded"
+                          >
+                            {d.phone}
+                          </a>
+                        ) : (
+                          <span className="text-slate-400">—</span>
+                        )}
                       </div>
                       {wa ? (
                         <a
