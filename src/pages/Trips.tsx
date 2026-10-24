@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
-import { AlertTriangle, Search } from 'lucide-react'
+import { AlertTriangle, Phone, Search } from 'lucide-react'
 import StatusBadge from '../components/StatusBadge'
 import { driverById, formatInr, trips, truckById } from '../data/mock'
 import type { Trip, TripStatus } from '../types'
 
 import { formatDateIn, overdueByLabel, todayIso } from '../utils/dates'
+import { telHref } from '../utils/phone'
 import { plateMatches } from '../utils/plates'
 
 const STATUS_FILTERS: { id: 'all' | TripStatus; label: string }[] = [
@@ -284,6 +285,10 @@ export default function Trips() {
             const overdue = isEtaOverdue(trip)
             const thin = isThinMargin(trip)
             const owes = hasBalanceDue(trip)
+            const callHref =
+              trip.status === 'planned' || trip.status === 'in_transit'
+                ? telHref(driver?.phone)
+                : null
             return (
               <div
                 key={trip.id}
@@ -325,6 +330,16 @@ export default function Trips() {
                     </div>
                     <p className="text-sm text-slate-500 mt-1">
                       {trip.cargo} · {trip.distanceKm} km · {truck?.plate} · {driver?.name}
+                      {callHref && driver ? (
+                        <a
+                          href={callHref}
+                          aria-label={`Call ${driver.name} (${driver.phone})`}
+                          className="ml-2 inline-flex items-center gap-1 rounded text-xs font-medium text-sky-700 hover:text-sky-900 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1"
+                        >
+                          <Phone className="h-3 w-3" aria-hidden="true" />
+                          Call
+                        </a>
+                      ) : null}
                     </p>
                     <p
                       className={`text-xs mt-1 ${
