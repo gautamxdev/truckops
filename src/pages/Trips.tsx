@@ -413,7 +413,7 @@ export default function Trips() {
         </div>
       )}
 
-      <p className="text-xs text-slate-500">
+      <p role="status" aria-live="polite" className="text-xs text-slate-500">
         Showing {filtered.length} of {trips.length} trips
       </p>
     </div>

@@ -386,7 +386,7 @@ export default function Trucks() {
             </tbody>
           </table>
         </div>
-        <div className="border-t border-slate-100 px-5 py-2.5 text-xs text-slate-500">
+        <div role="status" aria-live="polite" className="border-t border-slate-100 px-5 py-2.5 text-xs text-slate-500">
           Showing {filtered.length} of {trucks.length} trucks
         </div>
       </div>

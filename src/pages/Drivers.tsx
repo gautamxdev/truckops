@@ -329,7 +329,7 @@ export default function Drivers() {
         </div>
       )}
 
-      <p className="text-xs text-slate-500">
+      <p role="status" aria-live="polite" className="text-xs text-slate-500">
         Showing {filtered.length} of {drivers.length} drivers
       </p>
     </div>
