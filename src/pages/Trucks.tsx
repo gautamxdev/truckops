@@ -53,10 +53,21 @@ const STATUS_FILTERS: { id: 'all' | TruckStatus; label: string }[] = [
   { id: 'idle', label: 'Idle' },
 ]
 
-type TruckSort = 'plate_asc' | 'capacity_desc' | 'service_desc' | 'odometer_desc'
+type TruckSort =
+  | 'plate_asc'
+  | 'docs_asc'
+  | 'capacity_desc'
+  | 'service_desc'
+  | 'odometer_desc'
+
+/** Earliest of fitness / insurance expiry — the next paper that lapses. */
+function nextDocExpiry(t: { fitnessExpiry: string; insuranceExpiry: string }) {
+  return t.fitnessExpiry < t.insuranceExpiry ? t.fitnessExpiry : t.insuranceExpiry
+}
 
 const SORT_OPTIONS: { id: TruckSort; label: string }[] = [
   { id: 'plate_asc', label: 'Plate A–Z' },
+  { id: 'docs_asc', label: 'Docs expiring first' },
   { id: 'capacity_desc', label: 'Highest capacity' },
   { id: 'service_desc', label: 'Most km since service' },
   { id: 'odometer_desc', label: 'Highest odometer' },
@@ -64,6 +75,11 @@ const SORT_OPTIONS: { id: TruckSort; label: string }[] = [
 
 function compareTrucks(a: Truck, b: Truck, sort: TruckSort) {
   switch (sort) {
+    case 'docs_asc':
+      return (
+        nextDocExpiry(a).localeCompare(nextDocExpiry(b)) ||
+        a.plate.localeCompare(b.plate)
+      )
     case 'capacity_desc':
       return b.capacityTons - a.capacityTons
     case 'service_desc':
