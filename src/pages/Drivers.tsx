@@ -6,7 +6,7 @@ import type { Driver, DriverStatus } from '../types'
 
 import { dueInLabel, formatDateIn, isDueSoon, isExpired } from '../utils/dates'
 import { plateMatches } from '../utils/plates'
-import { phoneDigits, telHref } from '../utils/phone'
+import { phoneDigits, telHref, whatsappHref } from '../utils/phone'
 
 const STATUS_FILTERS: { id: 'all' | DriverStatus; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -47,11 +47,6 @@ function phoneMatches(phone: string, query: string) {
   if (!/^[\d\s+().-]+$/.test(query)) return false
   const digits = phoneDigits(query)
   return digits.length >= 4 && phoneDigits(phone).includes(digits)
-}
-
-function whatsappHref(phone: string) {
-  const digits = phoneDigits(phone)
-  return digits ? `https://wa.me/${digits}` : null
 }
 
 function LicenceDate({ value }: { value: string }) {
