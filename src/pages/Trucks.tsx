@@ -6,21 +6,7 @@ import type { Truck, TruckStatus } from '../types'
 
 import { dueInLabel, formatDateIn, isDueSoon, isExpired } from '../utils/dates'
 import { plateMatches } from '../utils/plates'
-
-const SERVICE_INTERVAL_KM = 10000
-
-function kmSinceService(odometerKm: number, lastServiceKm: number) {
-  return Math.max(0, odometerKm - lastServiceKm)
-}
-
-function needsService(odometerKm: number, lastServiceKm: number) {
-  return kmSinceService(odometerKm, lastServiceKm) >= SERVICE_INTERVAL_KM
-}
-
-/** Km remaining until the next service (negative once overdue). */
-function kmUntilService(odometerKm: number, lastServiceKm: number) {
-  return SERVICE_INTERVAL_KM - kmSinceService(odometerKm, lastServiceKm)
-}
+import { SERVICE_INTERVAL_KM, kmSinceService, kmUntilService, needsService } from '../utils/service'
 
 function needsAttention(t: {
   fitnessExpiry: string
@@ -31,7 +17,7 @@ function needsAttention(t: {
   return (
     isExpired(t.fitnessExpiry) ||
     isExpired(t.insuranceExpiry) ||
-    needsService(t.odometerKm, t.lastServiceKm)
+    needsService(t)
   )
 }
 
@@ -83,10 +69,7 @@ function compareTrucks(a: Truck, b: Truck, sort: TruckSort) {
     case 'capacity_desc':
       return b.capacityTons - a.capacityTons
     case 'service_desc':
-      return (
-        kmSinceService(b.odometerKm, b.lastServiceKm) -
-        kmSinceService(a.odometerKm, a.lastServiceKm)
-      )
+      return kmSinceService(b) - kmSinceService(a)
     case 'odometer_desc':
       return b.odometerKm - a.odometerKm
     case 'plate_asc':
@@ -158,7 +141,7 @@ export default function Trucks() {
   }
 
   const serviceDueCount = useMemo(
-    () => trucks.filter((t) => needsService(t.odometerKm, t.lastServiceKm)).length,
+    () => trucks.filter((t) => needsService(t)).length,
     [],
   )
 
@@ -313,9 +296,9 @@ export default function Trucks() {
                 </tr>
               ) : (
                 filtered.map((t) => {
-                  const since = kmSinceService(t.odometerKm, t.lastServiceKm)
-                  const until = kmUntilService(t.odometerKm, t.lastServiceKm)
-                  const due = needsService(t.odometerKm, t.lastServiceKm)
+                  const since = kmSinceService(t)
+                  const until = kmUntilService(t)
+                  const due = needsService(t)
                   const serviceTone = due
                     ? 'text-red-700 font-medium'
                     : since >= SERVICE_INTERVAL_KM * 0.8

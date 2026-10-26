@@ -10,19 +10,10 @@ import {
   truckById,
   driverById,
 } from '../data/mock'
-import type { Trip, Truck as FleetTruck } from '../types'
+import type { Trip } from '../types'
 import { daysUntil, formatDateIn, isDueSoon, isExpired, overdueByLabel, todayIso } from '../utils/dates'
 import { telHref } from '../utils/phone'
-
-const SERVICE_INTERVAL_KM = 10000
-
-function kmSinceService(t: FleetTruck) {
-  return Math.max(0, t.odometerKm - t.lastServiceKm)
-}
-
-function needsService(t: FleetTruck) {
-  return kmSinceService(t) >= SERVICE_INTERVAL_KM
-}
+import { kmSinceService, needsService } from '../utils/service'
 
 function isEtaOverdue(trip: Trip, today = todayIso()) {
   return (
