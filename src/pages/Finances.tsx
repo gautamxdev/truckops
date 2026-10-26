@@ -75,10 +75,10 @@ export default function Finances() {
     .filter((t) => t.status === 'settled' || t.status === 'delivered')
     .reduce((s, t) => s + t.freightInr, 0)
 
-  const filteredExpenses = useMemo(() => {
+  // Every filter except category, so each category chip can show how many items it would leave.
+  const otherFiltersMatch = useMemo(() => {
     const q = query.trim().toLowerCase()
-    const matches = expenses.filter((e) => {
-      if (categoryFilter !== 'all' && e.category !== categoryFilter) return false
+    return (e: Expense) => {
       if (scopeFilter === 'trip' && !e.tripId) return false
       if (scopeFilter === 'fleet' && e.tripId) return false
       if (largeOnly && !isLargeExpense(e)) return false
@@ -92,13 +92,37 @@ export default function Finances() {
         lane.includes(q) ||
         plateMatches(plate, q)
       )
-    })
+    }
+  }, [scopeFilter, query, largeOnly])
+
+  const categoryCounts = useMemo(() => {
+    const counts: Record<'all' | ExpenseCategory, number> = {
+      all: 0,
+      diesel: 0,
+      toll: 0,
+      maintenance: 0,
+      salary: 0,
+      other: 0,
+    }
+    for (const e of expenses) {
+      if (!otherFiltersMatch(e)) continue
+      counts.all += 1
+      counts[e.category] += 1
+    }
+    return counts
+  }, [otherFiltersMatch])
+
+  const filteredExpenses = useMemo(() => {
+    const matches = expenses.filter(
+      (e) =>
+        (categoryFilter === 'all' || e.category === categoryFilter) && otherFiltersMatch(e),
+    )
     // Ties fall back to newest first, then the order they were logged in.
     return matches.sort((a, b) => {
       if (sortBy === 'amount' && a.amountInr !== b.amountInr) return b.amountInr - a.amountInr
       return b.date.localeCompare(a.date)
     })
-  }, [categoryFilter, scopeFilter, query, sortBy, largeOnly])
+  }, [categoryFilter, otherFiltersMatch, sortBy])
 
   const filteredTotal = useMemo(
     () => filteredExpenses.reduce((s, e) => s + e.amountInr, 0),
@@ -272,7 +296,10 @@ export default function Finances() {
                         : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100'
                     }`}
                   >
-                    {f.label}
+                    {f.label}{' '}
+                    <span className={active ? 'text-slate-300' : 'text-slate-400'}>
+                      {categoryCounts[f.id]}
+                    </span>
                   </button>
                 )
               })}
