@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
-import { Fuel, Receipt, Search, Wrench, Wallet } from 'lucide-react'
+import { Download, Fuel, Receipt, Search, Wrench, Wallet } from 'lucide-react'
 import StatCard from '../components/StatCard'
 import { expenses, financeSummary, formatInr, tripById, trips, truckById } from '../data/mock'
 import type { Expense } from '../types'
-import { formatDateIn } from '../utils/dates'
+import { formatDateIn, todayIso } from '../utils/dates'
+import { downloadCsv, toCsv } from '../utils/csv'
 import { plateMatches } from '../utils/plates'
 
 type ExpenseCategory = Expense['category']
@@ -111,6 +112,23 @@ export default function Finances() {
     setLargeOnly(false)
   }
 
+  const exportCsv = () => {
+    const header = ['Date', 'Description', 'Category', 'Lane', 'Truck', 'Amount (INR)']
+    const rows = filteredExpenses.map((e) => {
+      const trip = e.tripId ? tripById(e.tripId) : undefined
+      const plate = trip ? truckById(trip.truckId)?.plate ?? '' : ''
+      return [
+        e.date,
+        e.description,
+        categoryLabel[e.category],
+        trip ? `${trip.origin} - ${trip.destination}` : 'Fleet / ops',
+        plate,
+        e.amountInr,
+      ]
+    })
+    downloadCsv(`truckops-expenses-${todayIso()}.csv`, toCsv([header, ...rows]))
+  }
+
   const largeCount = useMemo(
     () => expenses.filter((e) => isLargeExpense(e)).length,
     [],
@@ -184,10 +202,22 @@ export default function Finances() {
           <div className="px-5 py-4 border-b border-slate-100 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="font-display font-semibold text-slate-900">Recent expenses</h2>
-              <p className="text-xs text-slate-500">
-                {filteredExpenses.length} item{filteredExpenses.length === 1 ? '' : 's'} ·{' '}
-                {formatInr(filteredTotal)}
-              </p>
+              <div className="flex items-center gap-3">
+                <p className="text-xs text-slate-500">
+                  {filteredExpenses.length} item{filteredExpenses.length === 1 ? '' : 's'} ·{' '}
+                  {formatInr(filteredTotal)}
+                </p>
+                <button
+                  type="button"
+                  onClick={exportCsv}
+                  disabled={filteredExpenses.length === 0}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+                >
+                  <Download className="h-3.5 w-3.5" aria-hidden="true" />
+                  Export CSV
+                  <span className="sr-only"> of the {filteredExpenses.length} expenses shown</span>
+                </button>
+              </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <div className="relative w-full sm:max-w-xs">
