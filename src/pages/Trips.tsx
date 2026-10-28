@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
-import { AlertTriangle, Phone, Search } from 'lucide-react'
+import { AlertTriangle, Download, Phone, Search } from 'lucide-react'
 import StatusBadge from '../components/StatusBadge'
 import { driverById, formatInr, trips, truckById } from '../data/mock'
 import type { Trip, TripStatus } from '../types'
 
+import { downloadCsv, toCsv } from '../utils/csv'
 import { formatDateIn, overdueByLabel, todayIso } from '../utils/dates'
 import { telHref } from '../utils/phone'
 import { plateMatches } from '../utils/plates'
@@ -121,6 +122,52 @@ export default function Trips() {
     setBalanceDueOnly(false)
   }
 
+  /** Export the trips currently shown as a P&L sheet for the accountant or broker. */
+  const exportCsv = () => {
+    const header = [
+      'Trip ID',
+      'Origin',
+      'Destination',
+      'Status',
+      'Cargo',
+      'Truck',
+      'Driver',
+      'Departure',
+      'ETA',
+      'Distance (km)',
+      'Freight (INR)',
+      'Diesel (INR)',
+      'Toll (INR)',
+      'Advance (INR)',
+      'Balance due (INR)',
+      'Est. margin (INR)',
+      'Margin %',
+    ]
+    const rows = filtered.map((t) => {
+      const pct = marginPct(t)
+      return [
+        t.id,
+        t.origin,
+        t.destination,
+        t.status,
+        t.cargo,
+        truckById(t.truckId)?.plate ?? '',
+        driverById(t.driverId)?.name ?? '',
+        t.departureDate,
+        t.etaDate,
+        t.distanceKm,
+        t.freightInr,
+        t.dieselInr,
+        t.tollInr,
+        t.advanceInr,
+        balanceDue(t),
+        margin(t),
+        pct ?? '',
+      ]
+    })
+    downloadCsv(`truckops-trips-${todayIso()}.csv`, toCsv([header, ...rows]))
+  }
+
   const overdueCount = useMemo(
     () => trips.filter((t) => isEtaOverdue(t)).length,
     [],
@@ -150,12 +197,24 @@ export default function Trips() {
             ) : null}
           </p>
         </div>
-        <button
-          type="button"
-          className="rounded-lg bg-amber-500 px-3.5 py-2 text-sm font-semibold text-slate-950 hover:bg-amber-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2"
-        >
-          Plan trip
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={exportCsv}
+            disabled={filtered.length === 0}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+          >
+            <Download className="h-4 w-4" aria-hidden="true" />
+            Export CSV
+            <span className="sr-only"> of the {filtered.length} trips shown</span>
+          </button>
+          <button
+            type="button"
+            className="rounded-lg bg-amber-500 px-3.5 py-2 text-sm font-semibold text-slate-950 hover:bg-amber-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2"
+          >
+            Plan trip
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
