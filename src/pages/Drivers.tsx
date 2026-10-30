@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
 import { MessageCircle, Search } from 'lucide-react'
 import StatusBadge from '../components/StatusBadge'
-import { drivers, truckById } from '../data/mock'
-import type { Driver, DriverStatus } from '../types'
+import { drivers, trips, truckById } from '../data/mock'
+import type { Driver, DriverStatus, Trip } from '../types'
 
-import { dueInLabel, formatDateIn, isDueSoon, isExpired } from '../utils/dates'
+import { dueInLabel, formatDateIn, isDueSoon, isExpired, overdueByLabel } from '../utils/dates'
 import { plateMatches } from '../utils/plates'
 import { phoneDigits, telHref, whatsappHref } from '../utils/phone'
 
@@ -33,6 +33,26 @@ function compareDrivers(a: Driver, b: Driver, sort: DriverSort) {
     default:
       return a.name.localeCompare(b.name)
   }
+}
+
+/** The trip a driver is currently driving (in transit), if any. */
+function activeTripFor(driverId: string): Trip | undefined {
+  return trips.find((t) => t.driverId === driverId && t.status === 'in_transit')
+}
+
+function CurrentTrip({ trip }: { trip: Trip }) {
+  const late = isExpired(trip.etaDate)
+  return (
+    <dd className="text-right">
+      <span className="font-medium text-slate-800">
+        {trip.origin} → {trip.destination}
+      </span>
+      <span className={`block text-xs ${late ? 'text-red-700 font-medium' : 'text-slate-500'}`}>
+        ETA {formatDateIn(trip.etaDate)}
+        {late ? ` · ${overdueByLabel(trip.etaDate)}` : null}
+      </span>
+    </dd>
+  )
 }
 
 function hasLicenceAlert(licenceExpiry: string) {
@@ -257,6 +277,7 @@ export default function Drivers() {
             const licenceBad = hasLicenceAlert(d.licenceExpiry)
             const wa = whatsappHref(d.phone)
             const tel = telHref(d.phone)
+            const activeTrip = activeTripFor(d.id)
             return (
               <div
                 key={d.id}
@@ -317,6 +338,12 @@ export default function Drivers() {
                       {truck?.plate ?? 'Unassigned'}
                     </dd>
                   </div>
+                  {activeTrip ? (
+                    <div className="flex justify-between gap-2 items-start">
+                      <dt className="text-slate-500">Current trip</dt>
+                      <CurrentTrip trip={activeTrip} />
+                    </div>
+                  ) : null}
                 </dl>
               </div>
             )
