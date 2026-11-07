@@ -53,6 +53,18 @@ export default function AppLayout() {
     mainRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' })
   }, [location.pathname])
 
+  // Drawer is lg:hidden — if it stays open past the breakpoint, body scroll lock
+  // and the focus trap keep running against an invisible panel.
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)')
+    const onChange = (e: MediaQueryListEvent | MediaQueryList) => {
+      if (e.matches) setMobileNavOpen(false)
+    }
+    onChange(mq)
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+
   useEffect(() => {
     if (!mobileNavOpen) return
 
