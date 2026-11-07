@@ -1,12 +1,19 @@
 import { useMemo, useState } from 'react'
-import { MessageCircle, Search } from 'lucide-react'
+import { Download, MessageCircle, Search } from 'lucide-react'
 import StatusBadge from '../components/StatusBadge'
 import { drivers, trips, truckById } from '../data/mock'
 import type { Driver, DriverStatus, Trip } from '../types'
 
-import { dueInLabel, formatDateIn, isDueSoon, isExpired, overdueByLabel } from '../utils/dates'
+import { downloadCsv, toCsv } from '../utils/csv'
+import { dueInLabel, formatDateIn, isDueSoon, isExpired, overdueByLabel, todayIso } from '../utils/dates'
 import { plateMatches } from '../utils/plates'
 import { phoneDigits, telHref, whatsappHref } from '../utils/phone'
+
+const STATUS_LABEL: Record<DriverStatus, string> = {
+  on_trip: 'On trip',
+  available: 'Available',
+  off_duty: 'Off duty',
+}
 
 const STATUS_FILTERS: { id: 'all' | DriverStatus; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -133,6 +140,39 @@ export default function Drivers() {
     setUnassignedOnly(false)
   }
 
+  /** Export the drivers currently shown for the roster / compliance desk. */
+  const exportCsv = () => {
+    const header = [
+      'Name',
+      'Phone',
+      'Status',
+      'Home base',
+      'Experience (yrs)',
+      'Licence no',
+      'Licence expiry',
+      'Assigned truck',
+      'Current trip',
+      'Current trip ETA',
+    ]
+    const rows = filtered.map((d) => {
+      const truck = d.assignedTruckId ? truckById(d.assignedTruckId) : undefined
+      const trip = activeTripFor(d.id)
+      return [
+        d.name,
+        d.phone,
+        STATUS_LABEL[d.status],
+        d.homeBase,
+        d.experienceYears,
+        d.licenceNo,
+        d.licenceExpiry,
+        truck?.plate ?? '',
+        trip ? `${trip.origin} → ${trip.destination}` : '',
+        trip?.etaDate ?? '',
+      ]
+    })
+    downloadCsv(`truckops-drivers-${todayIso()}.csv`, toCsv([header, ...rows]))
+  }
+
   const expiredCount = useMemo(
     () => drivers.filter((d) => isExpired(d.licenceExpiry)).length,
     [],
@@ -162,12 +202,24 @@ export default function Drivers() {
             ) : null}
           </p>
         </div>
-        <button
-          type="button"
-          className="rounded-lg bg-slate-900 px-3.5 py-2 text-sm font-medium text-white hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
-        >
-          Add driver
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={exportCsv}
+            disabled={filtered.length === 0}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+          >
+            <Download className="h-4 w-4" aria-hidden="true" />
+            Export CSV
+            <span className="sr-only"> of the {filtered.length} drivers shown</span>
+          </button>
+          <button
+            type="button"
+            className="rounded-lg bg-slate-900 px-3.5 py-2 text-sm font-medium text-white hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+          >
+            Add driver
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
