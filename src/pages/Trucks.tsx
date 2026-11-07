@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
-import { Search, Wrench } from 'lucide-react'
+import { Download, Search, Wrench } from 'lucide-react'
 import StatusBadge from '../components/StatusBadge'
 import { trucks } from '../data/mock'
 import type { Truck, TruckStatus } from '../types'
 
-import { dueInLabel, formatDateIn, isDueSoon, isExpired } from '../utils/dates'
+import { downloadCsv, toCsv } from '../utils/csv'
+import { dueInLabel, formatDateIn, isDueSoon, isExpired, todayIso } from '../utils/dates'
 import { plateMatches } from '../utils/plates'
 import { SERVICE_INTERVAL_KM, kmSinceService, kmUntilService, needsService } from '../utils/service'
 
@@ -29,6 +30,13 @@ function hasDocsAlert(t: { fitnessExpiry: string; insuranceExpiry: string }) {
     isExpired(t.insuranceExpiry) ||
     isDueSoon(t.insuranceExpiry)
   )
+}
+
+const STATUS_LABEL: Record<TruckStatus, string> = {
+  on_trip: 'On trip',
+  available: 'Available',
+  maintenance: 'Workshop',
+  idle: 'Idle',
 }
 
 const STATUS_FILTERS: { id: 'all' | TruckStatus; label: string }[] = [
@@ -140,6 +148,33 @@ export default function Trucks() {
     setDocsOnly(false)
   }
 
+  /** Export the trucks currently shown for the workshop / RTO desk. */
+  const exportCsv = () => {
+    const header = [
+      'Plate',
+      'Model',
+      'Capacity (T)',
+      'Status',
+      'Fitness expiry',
+      'Insurance expiry',
+      'Odometer (km)',
+      'Km since service',
+      'Km until service',
+    ]
+    const rows = filtered.map((t) => [
+      t.plate,
+      t.model,
+      t.capacityTons,
+      STATUS_LABEL[t.status],
+      t.fitnessExpiry,
+      t.insuranceExpiry,
+      t.odometerKm,
+      kmSinceService(t),
+      kmUntilService(t),
+    ])
+    downloadCsv(`truckops-trucks-${todayIso()}.csv`, toCsv([header, ...rows]))
+  }
+
   const serviceDueCount = useMemo(
     () => trucks.filter((t) => needsService(t)).length,
     [],
@@ -163,12 +198,24 @@ export default function Trucks() {
             ) : null}
           </p>
         </div>
-        <button
-          type="button"
-          className="rounded-lg bg-slate-900 px-3.5 py-2 text-sm font-medium text-white hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
-        >
-          Add truck
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={exportCsv}
+            disabled={filtered.length === 0}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+          >
+            <Download className="h-4 w-4" aria-hidden="true" />
+            Export CSV
+            <span className="sr-only"> of the {filtered.length} trucks shown</span>
+          </button>
+          <button
+            type="button"
+            className="rounded-lg bg-slate-900 px-3.5 py-2 text-sm font-medium text-white hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+          >
+            Add truck
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
