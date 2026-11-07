@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react'
-import { AlertTriangle, Download, Phone, Search } from 'lucide-react'
+import { AlertTriangle, Download, MessageCircle, Phone, Search } from 'lucide-react'
 import StatusBadge from '../components/StatusBadge'
 import { driverById, formatInr, trips, truckById } from '../data/mock'
 import type { Trip, TripStatus } from '../types'
 
 import { downloadCsv, toCsv } from '../utils/csv'
 import { formatDateIn, overdueByLabel, todayIso } from '../utils/dates'
-import { telHref } from '../utils/phone'
+import { telHref, whatsappHref } from '../utils/phone'
 import { plateMatches } from '../utils/plates'
 
 const STATUS_FILTERS: { id: 'all' | TripStatus; label: string }[] = [
@@ -344,10 +344,10 @@ export default function Trips() {
             const overdue = isEtaOverdue(trip)
             const thin = isThinMargin(trip)
             const owes = hasBalanceDue(trip)
-            const callHref =
+            const canReachDriver =
               trip.status === 'planned' || trip.status === 'in_transit'
-                ? telHref(driver?.phone)
-                : null
+            const callHref = canReachDriver ? telHref(driver?.phone) : null
+            const waHref = canReachDriver ? whatsappHref(driver?.phone) : null
             return (
               <div
                 key={trip.id}
@@ -389,15 +389,31 @@ export default function Trips() {
                     </div>
                     <p className="text-sm text-slate-500 mt-1">
                       {trip.cargo} · {trip.distanceKm} km · {truck?.plate} · {driver?.name}
-                      {callHref && driver ? (
-                        <a
-                          href={callHref}
-                          aria-label={`Call ${driver.name} (${driver.phone})`}
-                          className="ml-2 inline-flex items-center gap-1 rounded text-xs font-medium text-sky-700 hover:text-sky-900 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1"
-                        >
-                          <Phone className="h-3 w-3" aria-hidden="true" />
-                          Call
-                        </a>
+                      {(callHref || waHref) && driver ? (
+                        <span className="ml-2 inline-flex items-center gap-2">
+                          {callHref ? (
+                            <a
+                              href={callHref}
+                              aria-label={`Call ${driver.name} (${driver.phone})`}
+                              className="inline-flex items-center gap-1 rounded text-xs font-medium text-sky-700 hover:text-sky-900 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1"
+                            >
+                              <Phone className="h-3 w-3" aria-hidden="true" />
+                              Call
+                            </a>
+                          ) : null}
+                          {waHref ? (
+                            <a
+                              href={waHref}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              aria-label={`WhatsApp ${driver.name}`}
+                              className="inline-flex items-center gap-1 rounded text-xs font-medium text-emerald-700 hover:text-emerald-900 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1"
+                            >
+                              <MessageCircle className="h-3 w-3" aria-hidden="true" />
+                              WhatsApp
+                            </a>
+                          ) : null}
+                        </span>
                       ) : null}
                     </p>
                     <p
