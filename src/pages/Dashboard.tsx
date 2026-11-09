@@ -1,4 +1,5 @@
 import { Truck, Users, MapPinned, IndianRupee, Fuel, AlertTriangle, Wallet, Phone, MessageCircle } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import StatCard from '../components/StatCard'
 import StatusBadge from '../components/StatusBadge'
 import {
@@ -166,7 +167,11 @@ export default function Dashboard() {
       </div>
 
       {toCollectInr > 0 ? (
-        <div className="rounded-xl border border-sky-200 bg-sky-50 px-5 py-4 flex flex-wrap items-center justify-between gap-3">
+        <Link
+          to="/app/trips?balance=1"
+          aria-label={`Cash to collect: ${formatInr(toCollectInr)} on ${unsettledWithBalance.length} unsettled trip${unsettledWithBalance.length === 1 ? '' : 's'}. View these trips`}
+          className="rounded-xl border border-sky-200 bg-sky-50 px-5 py-4 flex flex-wrap items-center justify-between gap-3 hover:bg-sky-100/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1"
+        >
           <div className="flex items-start gap-3">
             <div className="h-10 w-10 rounded-lg bg-sky-100 text-sky-800 flex items-center justify-center shrink-0">
               <Wallet className="h-5 w-5" aria-hidden="true" />
@@ -185,7 +190,7 @@ export default function Dashboard() {
           <p className="font-display text-xl font-bold text-sky-950">
             {formatInr(toCollectInr)}
           </p>
-        </div>
+        </Link>
       ) : null}
 
       <div className="grid lg:grid-cols-3 gap-4">

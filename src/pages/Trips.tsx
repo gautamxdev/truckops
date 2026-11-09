@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { AlertTriangle, Download, MessageCircle, Phone, Search } from 'lucide-react'
 import StatusBadge from '../components/StatusBadge'
 import { driverById, formatInr, trips, truckById } from '../data/mock'
@@ -86,11 +87,15 @@ function compareTrips(a: Trip, b: Trip, sort: TripSort) {
 }
 
 export default function Trips() {
+  // Deep links from the dashboard, e.g. /app/trips?balance=1, open with that filter on.
+  const [searchParams] = useSearchParams()
   const [statusFilter, setStatusFilter] = useState<'all' | TripStatus>('all')
   const [query, setQuery] = useState('')
   const [overdueOnly, setOverdueOnly] = useState(false)
   const [thinMarginOnly, setThinMarginOnly] = useState(false)
-  const [balanceDueOnly, setBalanceDueOnly] = useState(false)
+  const [balanceDueOnly, setBalanceDueOnly] = useState(
+    () => searchParams.get('balance') === '1',
+  )
   const [sort, setSort] = useState<TripSort>('departure_desc')
 
   const filtered = useMemo(() => {
