@@ -1,4 +1,4 @@
-import { Truck, Users, MapPinned, IndianRupee, Fuel, AlertTriangle, Wallet, Phone } from 'lucide-react'
+import { Truck, Users, MapPinned, IndianRupee, Fuel, AlertTriangle, Wallet, Phone, MessageCircle } from 'lucide-react'
 import StatCard from '../components/StatCard'
 import StatusBadge from '../components/StatusBadge'
 import {
@@ -12,7 +12,7 @@ import {
 } from '../data/mock'
 import type { Trip } from '../types'
 import { daysUntil, formatDateIn, isDueSoon, isExpired, overdueByLabel, todayIso } from '../utils/dates'
-import { telHref } from '../utils/phone'
+import { telHref, whatsappHref } from '../utils/phone'
 import { kmSinceService, needsService } from '../utils/service'
 
 function isEtaOverdue(trip: Trip, today = todayIso()) {
@@ -212,6 +212,7 @@ export default function Dashboard() {
               const driver = driverById(trip.driverId)
               const overdue = isEtaOverdue(trip)
               const callHref = telHref(driver?.phone)
+              const waHref = whatsappHref(driver?.phone)
               return (
                 <div
                   key={trip.id}
@@ -258,6 +259,18 @@ export default function Dashboard() {
                         }`}
                       >
                         <Phone className="h-4 w-4" aria-hidden="true" />
+                      </a>
+                    ) : null}
+                    {waHref && driver ? (
+                      <a
+                        href={waHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`WhatsApp ${driver.name}`}
+                        title={`WhatsApp ${driver.name}`}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-emerald-700 hover:bg-emerald-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1"
+                      >
+                        <MessageCircle className="h-4 w-4" aria-hidden="true" />
                       </a>
                     ) : null}
                     <span className="text-sm font-semibold text-slate-800">
