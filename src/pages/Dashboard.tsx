@@ -200,9 +200,15 @@ export default function Dashboard() {
             <span className="text-xs text-slate-500">
               {activeTrips.length} open
               {overdueEtaCount > 0 ? (
-                <span className="ml-1 font-medium text-red-600">
-                  · {overdueEtaCount} overdue ETA{overdueEtaCount === 1 ? '' : 's'}
-                </span>
+                <>
+                  {' · '}
+                  <Link
+                    to="/app/trips?overdue=1"
+                    className="rounded font-medium text-red-600 hover:text-red-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1"
+                  >
+                    {overdueEtaCount} overdue ETA{overdueEtaCount === 1 ? '' : 's'}
+                  </Link>
+                </>
               ) : null}
             </span>
           </div>

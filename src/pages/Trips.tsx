@@ -87,11 +87,13 @@ function compareTrips(a: Trip, b: Trip, sort: TripSort) {
 }
 
 export default function Trips() {
-  // Deep links from the dashboard, e.g. /app/trips?balance=1, open with that filter on.
+  // Deep links from the dashboard, e.g. /app/trips?balance=1 or ?overdue=1, open with that filter on.
   const [searchParams] = useSearchParams()
   const [statusFilter, setStatusFilter] = useState<'all' | TripStatus>('all')
   const [query, setQuery] = useState('')
-  const [overdueOnly, setOverdueOnly] = useState(false)
+  const [overdueOnly, setOverdueOnly] = useState(
+    () => searchParams.get('overdue') === '1',
+  )
   const [thinMarginOnly, setThinMarginOnly] = useState(false)
   const [balanceDueOnly, setBalanceDueOnly] = useState(
     () => searchParams.get('balance') === '1',
