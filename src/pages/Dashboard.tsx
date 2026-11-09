@@ -329,13 +329,25 @@ export default function Dashboard() {
               <ul className="space-y-1.5 text-sm text-orange-900/80">
                 {docAlerts.map((a) => (
                   <li key={a.id}>
-                    <span
-                      className={
-                        a.severity === 'expired' ? 'font-semibold text-red-800' : undefined
-                      }
-                    >
-                      {a.label}
-                    </span>{' '}
+                    {a.kind === 'licence' ? (
+                      <span
+                        className={
+                          a.severity === 'expired' ? 'font-semibold text-red-800' : undefined
+                        }
+                      >
+                        {a.label}
+                      </span>
+                    ) : (
+                      <Link
+                        to={`/app/trucks?q=${encodeURIComponent(a.label)}`}
+                        title={`Open ${a.label} in Trucks`}
+                        className={`rounded underline decoration-orange-300 underline-offset-2 hover:decoration-current focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1 ${
+                          a.severity === 'expired' ? 'font-semibold text-red-800' : ''
+                        }`}
+                      >
+                        {a.label}
+                      </Link>
+                    )}{' '}
                     — {a.detail}
                   </li>
                 ))}

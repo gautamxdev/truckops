@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Download, Search, Wrench } from 'lucide-react'
 import StatusBadge from '../components/StatusBadge'
 import { trucks } from '../data/mock'
@@ -120,7 +121,9 @@ function DocDate({ value, label }: { value: string; label: string }) {
 }
 
 export default function Trucks() {
-  const [query, setQuery] = useState('')
+  // /app/trucks?q=MH12AB1234 opens with that plate already searched (dashboard alerts link here).
+  const [searchParams] = useSearchParams()
+  const [query, setQuery] = useState(() => searchParams.get('q') ?? '')
   const [statusFilter, setStatusFilter] = useState<'all' | TruckStatus>('all')
   const [alertsOnly, setAlertsOnly] = useState(false)
   const [docsOnly, setDocsOnly] = useState(false)
