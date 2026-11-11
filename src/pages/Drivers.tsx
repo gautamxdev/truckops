@@ -392,7 +392,17 @@ export default function Drivers() {
                   <div className="flex justify-between gap-2">
                     <dt className="text-slate-500">Truck</dt>
                     <dd className="font-medium text-slate-800">
-                      {truck?.plate ?? 'Unassigned'}
+                      {truck ? (
+                        <Link
+                          to={`/app/trucks?q=${encodeURIComponent(truck.plate)}`}
+                          className="text-sky-700 hover:text-sky-900 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1 rounded"
+                        >
+                          {truck.plate}
+                          <span className="sr-only"> — open in Trucks</span>
+                        </Link>
+                      ) : (
+                        'Unassigned'
+                      )}
                     </dd>
                   </div>
                   {activeTrip ? (
