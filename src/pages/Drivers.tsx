@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Download, MessageCircle, Search } from 'lucide-react'
 import StatusBadge from '../components/StatusBadge'
 import { drivers, trips, truckById } from '../data/mock'
@@ -47,13 +48,17 @@ function activeTripFor(driverId: string): Trip | undefined {
   return trips.find((t) => t.driverId === driverId && t.status === 'in_transit')
 }
 
-function CurrentTrip({ trip }: { trip: Trip }) {
+function CurrentTrip({ trip, driverName }: { trip: Trip; driverName: string }) {
   const late = isExpired(trip.etaDate)
   return (
     <dd className="text-right">
-      <span className="font-medium text-slate-800">
+      <Link
+        to={`/app/trips?q=${encodeURIComponent(driverName)}`}
+        className="font-medium text-sky-700 hover:text-sky-900 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1 rounded"
+      >
         {trip.origin} → {trip.destination}
-      </span>
+        <span className="sr-only"> — see {driverName}'s trips in Trips</span>
+      </Link>
       <span className={`block text-xs ${late ? 'text-red-700 font-medium' : 'text-slate-500'}`}>
         ETA {formatDateIn(trip.etaDate)}
         {late ? ` · ${overdueByLabel(trip.etaDate)}` : null}
@@ -393,7 +398,7 @@ export default function Drivers() {
                   {activeTrip ? (
                     <div className="flex justify-between gap-2 items-start">
                       <dt className="text-slate-500">Current trip</dt>
-                      <CurrentTrip trip={activeTrip} />
+                      <CurrentTrip trip={activeTrip} driverName={d.name} />
                     </div>
                   ) : null}
                 </dl>
