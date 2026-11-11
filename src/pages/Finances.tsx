@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Download, Fuel, Receipt, Search, Wrench, Wallet } from 'lucide-react'
 import StatCard from '../components/StatCard'
 import { expenses, financeSummary, formatInr, tripById, trips, truckById } from '../data/mock'
@@ -414,7 +415,18 @@ export default function Finances() {
                             <span className="text-slate-600">
                               {' '}
                               · {trip.origin} → {trip.destination}
-                              {plate ? ` · ${plate}` : ''}
+                              {plate ? (
+                                <>
+                                  {' · '}
+                                  <Link
+                                    to={`/app/trucks?q=${encodeURIComponent(plate)}`}
+                                    className="text-sky-700 hover:text-sky-900 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1 rounded"
+                                  >
+                                    {plate}
+                                    <span className="sr-only"> — open in Trucks</span>
+                                  </Link>
+                                </>
+                              ) : null}
                             </span>
                           ) : (
                             <span className="text-slate-400"> · fleet / ops</span>
