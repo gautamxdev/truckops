@@ -46,8 +46,15 @@ export default function AppLayout() {
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const mainRef = useRef<HTMLElement>(null)
 
-  useEffect(() => {
+  // Close the drawer when the route changes (link tap, back/forward) during render,
+  // instead of in an effect that paints the open drawer for one extra frame.
+  const [drawerPath, setDrawerPath] = useState(location.pathname)
+  if (drawerPath !== location.pathname) {
+    setDrawerPath(location.pathname)
     setMobileNavOpen(false)
+  }
+
+  useEffect(() => {
     const page = PAGE_TITLES[location.pathname] ?? 'App'
     document.title = `${page} · TruckOps`
     mainRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' })
@@ -152,6 +159,8 @@ export default function AppLayout() {
             key={item.to}
             to={item.to}
             end={item.end}
+            // Tapping the page you are already on does not change the route, so close explicitly.
+            onClick={opts.mobile ? () => setMobileNavOpen(false) : undefined}
             className={({ isActive }) =>
               `flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${
                 isActive
