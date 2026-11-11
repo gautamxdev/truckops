@@ -56,9 +56,15 @@ function isLargeExpense(e: Expense) {
   return e.amountInr >= LARGE_EXPENSE_INR
 }
 
-const COST_MIX_ROWS = [
-  { label: 'Diesel', value: financeSummary.dieselInr, color: 'bg-amber-500' },
-  { label: 'Toll', value: financeSummary.tollInr, color: 'bg-sky-500' },
+/** Rows tied to a single expense category can filter the expense list below. */
+const COST_MIX_ROWS: {
+  label: string
+  value: number
+  color: string
+  category?: ExpenseCategory
+}[] = [
+  { label: 'Diesel', value: financeSummary.dieselInr, color: 'bg-amber-500', category: 'diesel' },
+  { label: 'Toll', value: financeSummary.tollInr, color: 'bg-sky-500', category: 'toll' },
   { label: 'Other', value: financeSummary.otherExpenseInr, color: 'bg-slate-400' },
 ]
 
@@ -201,7 +207,27 @@ export default function Finances() {
             return (
               <div key={row.label} className="mb-3">
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-slate-600">{row.label}</span>
+                  {row.category ? (
+                    <button
+                      type="button"
+                      aria-pressed={categoryFilter === row.category}
+                      onClick={() =>
+                        setCategoryFilter((current) =>
+                          current === row.category ? 'all' : (row.category ?? 'all'),
+                        )
+                      }
+                      className={`rounded text-left hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1 ${
+                        categoryFilter === row.category
+                          ? 'font-semibold text-slate-900'
+                          : 'text-sky-700 hover:text-sky-900'
+                      }`}
+                    >
+                      {row.label}
+                      <span className="sr-only"> — show only {row.label.toLowerCase()} expenses</span>
+                    </button>
+                  ) : (
+                    <span className="text-slate-600">{row.label}</span>
+                  )}
                   <span className="font-medium">
                     {formatInr(row.value)} · {pct}%
                   </span>
