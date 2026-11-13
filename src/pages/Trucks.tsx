@@ -48,6 +48,10 @@ const STATUS_FILTERS: { id: 'all' | TruckStatus; label: string }[] = [
   { id: 'idle', label: 'Idle' },
 ]
 
+function parseStatusParam(value: string | null): 'all' | TruckStatus {
+  return value && Object.hasOwn(STATUS_LABEL, value) ? (value as TruckStatus) : 'all'
+}
+
 type TruckSort =
   | 'plate_asc'
   | 'docs_asc'
@@ -124,7 +128,10 @@ export default function Trucks() {
   // /app/trucks?q=MH12AB1234 opens with that plate already searched (dashboard alerts link here).
   const [searchParams] = useSearchParams()
   const [query, setQuery] = useState(() => searchParams.get('q') ?? '')
-  const [statusFilter, setStatusFilter] = useState<'all' | TruckStatus>('all')
+  // ?status=on_trip|available|maintenance|idle opens with that status chip selected.
+  const [statusFilter, setStatusFilter] = useState<'all' | TruckStatus>(() =>
+    parseStatusParam(searchParams.get('status')),
+  )
   const [alertsOnly, setAlertsOnly] = useState(false)
   const [docsOnly, setDocsOnly] = useState(false)
   const [sort, setSort] = useState<TruckSort>('plate_asc')
