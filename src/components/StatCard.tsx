@@ -20,7 +20,7 @@ export default function StatCard({
           {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
         </div>
         <div className="h-10 w-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-          <Icon className="h-5 w-5" />
+          <Icon className="h-5 w-5" aria-hidden="true" />
         </div>
       </div>
     </div>
