@@ -145,6 +145,8 @@ export default function Dashboard() {
           value={`${onTrip} / ${trucks.length}`}
           hint={`${available} available`}
           icon={Truck}
+          to="/app/trucks?status=on_trip"
+          linkLabel={`Trucks on road: ${onTrip} of ${trucks.length}, ${available} available. View trucks on trip`}
         />
         <StatCard
           label="Drivers rostered"
