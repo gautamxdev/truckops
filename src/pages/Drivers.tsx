@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Download, MessageCircle, Search } from 'lucide-react'
 import StatusBadge from '../components/StatusBadge'
 import { drivers, trips, truckById } from '../data/mock'
@@ -22,6 +22,11 @@ const STATUS_FILTERS: { id: 'all' | DriverStatus; label: string }[] = [
   { id: 'available', label: 'Available' },
   { id: 'off_duty', label: 'Off duty' },
 ]
+
+/** Reads ?status= into a chip id, ignoring anything that is not a known driver status. */
+function parseStatusParam(value: string | null): 'all' | DriverStatus {
+  return value && Object.hasOwn(STATUS_LABEL, value) ? (value as DriverStatus) : 'all'
+}
 
 type DriverSort = 'name_asc' | 'experience_desc' | 'licence_asc'
 
@@ -112,8 +117,13 @@ function LicenceDate({ value }: { value: string }) {
 }
 
 export default function Drivers() {
-  const [query, setQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | DriverStatus>('all')
+  // /app/drivers?q=Ramesh opens with that driver already searched; ?status=on_trip|available|off_duty
+  // opens with that status chip selected, matching how Trips and Trucks accept deep links.
+  const [searchParams] = useSearchParams()
+  const [query, setQuery] = useState(() => searchParams.get('q') ?? '')
+  const [statusFilter, setStatusFilter] = useState<'all' | DriverStatus>(() =>
+    parseStatusParam(searchParams.get('status')),
+  )
   const [licenceAlertsOnly, setLicenceAlertsOnly] = useState(false)
   const [unassignedOnly, setUnassignedOnly] = useState(false)
   const [sort, setSort] = useState<DriverSort>('name_asc')
