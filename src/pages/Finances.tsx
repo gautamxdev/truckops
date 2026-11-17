@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Download, Fuel, Receipt, Search, Wrench, Wallet } from 'lucide-react'
 import StatCard from '../components/StatCard'
 import { expenses, financeSummary, formatInr, tripById, trips, truckById } from '../data/mock'
@@ -71,10 +71,19 @@ const COST_MIX_ROWS: {
 
 const COST_MIX_TOTAL = COST_MIX_ROWS.reduce((s, row) => s + row.value, 0)
 
+/** Read a category from ?category= so other pages can deep-link a filtered expense list. */
+function categoryFromParam(value: string | null): 'all' | ExpenseCategory {
+  const match = CATEGORY_FILTERS.find((f) => f.id === value)
+  return match ? match.id : 'all'
+}
+
 export default function Finances() {
-  const [categoryFilter, setCategoryFilter] = useState<'all' | ExpenseCategory>('all')
+  const [searchParams] = useSearchParams()
+  const [categoryFilter, setCategoryFilter] = useState<'all' | ExpenseCategory>(() =>
+    categoryFromParam(searchParams.get('category')),
+  )
   const [scopeFilter, setScopeFilter] = useState<ExpenseScope>('all')
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState(() => searchParams.get('q') ?? '')
   const [sortBy, setSortBy] = useState<ExpenseSort>('newest')
   const [largeOnly, setLargeOnly] = useState(false)
 
