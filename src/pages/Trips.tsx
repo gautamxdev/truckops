@@ -339,7 +339,7 @@ export default function Trips() {
           </button>
         </div>
       ) : (
-        <div className="space-y-3">
+        <ul className="space-y-3" aria-label="Trips">
           {filtered.map((trip) => {
             const truck = truckById(trip.truckId)
             const driver = driverById(trip.driverId)
@@ -356,7 +356,7 @@ export default function Trips() {
             const callHref = canReachDriver ? telHref(driver?.phone) : null
             const waHref = canReachDriver ? whatsappHref(driver?.phone) : null
             return (
-              <div
+              <li
                 key={trip.id}
                 className={`rounded-xl border bg-white p-5 shadow-sm ${
                   overdue ? 'border-red-200' : thin ? 'border-amber-200' : 'border-slate-200'
@@ -441,58 +441,58 @@ export default function Trips() {
                     </p>
                   </div>
                 </div>
-                <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-8 gap-3 rounded-lg bg-slate-50 p-3 text-sm">
+                <dl className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-8 gap-3 rounded-lg bg-slate-50 p-3 text-sm">
                   <div>
-                    <p className="text-xs text-slate-500">Diesel</p>
-                    <p className="font-medium">{formatInr(trip.dieselInr)}</p>
+                    <dt className="text-xs text-slate-500">Diesel</dt>
+                    <dd className="font-medium">{formatInr(trip.dieselInr)}</dd>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500">Toll / FASTag</p>
-                    <p className="font-medium">{formatInr(trip.tollInr)}</p>
+                    <dt className="text-xs text-slate-500">Toll / FASTag</dt>
+                    <dd className="font-medium">{formatInr(trip.tollInr)}</dd>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500">Advance</p>
-                    <p className="font-medium">{formatInr(trip.advanceInr)}</p>
+                    <dt className="text-xs text-slate-500">Advance</dt>
+                    <dd className="font-medium">{formatInr(trip.advanceInr)}</dd>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500">Balance due</p>
-                    <p
+                    <dt className="text-xs text-slate-500">Balance due</dt>
+                    <dd
                       className={`font-semibold ${
                         due > 0 ? 'text-amber-800' : due < 0 ? 'text-red-600' : 'text-slate-700'
                       }`}
                     >
                       {formatInr(due)}
-                    </p>
+                    </dd>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500">Freight ₹/km</p>
-                    <p className="font-medium">{fpk != null ? formatInr(fpk) : '—'}</p>
+                    <dt className="text-xs text-slate-500">Freight ₹/km</dt>
+                    <dd className="font-medium">{fpk != null ? formatInr(fpk) : '—'}</dd>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500">Diesel ₹/km</p>
-                    <p className="font-medium">{dpk != null ? formatInr(dpk) : '—'}</p>
+                    <dt className="text-xs text-slate-500">Diesel ₹/km</dt>
+                    <dd className="font-medium">{dpk != null ? formatInr(dpk) : '—'}</dd>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500">Est. margin</p>
-                    <p className={`font-semibold ${m >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
+                    <dt className="text-xs text-slate-500">Est. margin</dt>
+                    <dd className={`font-semibold ${m >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
                       {formatInr(m)}
-                    </p>
+                    </dd>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500">Margin %</p>
-                    <p
+                    <dt className="text-xs text-slate-500">Margin %</dt>
+                    <dd
                       className={`font-semibold ${
                         (mp ?? 0) >= 0 ? 'text-emerald-700' : 'text-red-600'
                       }`}
                     >
                       {mp != null ? `${mp}%` : '—'}
-                    </p>
+                    </dd>
                   </div>
-                </div>
-              </div>
+                </dl>
+              </li>
             )
           })}
-        </div>
+        </ul>
       )}
 
       <p role="status" aria-live="polite" className="text-xs text-slate-500">
