@@ -18,6 +18,11 @@ const STATUS_FILTERS: { id: 'all' | TripStatus; label: string }[] = [
   { id: 'settled', label: 'Settled' },
 ]
 
+function parseStatusParam(value: string | null): 'all' | TripStatus {
+  const match = STATUS_FILTERS.find((f) => f.id !== 'all' && f.id === value)
+  return match ? (match.id as TripStatus) : 'all'
+}
+
 function isEtaOverdue(trip: Trip, today = todayIso()) {
   return (
     (trip.status === 'in_transit' || trip.status === 'planned') &&
@@ -87,14 +92,19 @@ function compareTrips(a: Trip, b: Trip, sort: TripSort) {
 }
 
 export default function Trips() {
-  // Deep links, e.g. /app/trips?balance=1, ?overdue=1 or ?q=<driver name>, open with that filter on.
+  // Deep links, e.g. /app/trips?balance=1, ?overdue=1, ?thin=1, ?status=in_transit
+  // or ?q=<driver name>, open with that filter on. Unknown statuses fall back to All.
   const [searchParams] = useSearchParams()
-  const [statusFilter, setStatusFilter] = useState<'all' | TripStatus>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | TripStatus>(() =>
+    parseStatusParam(searchParams.get('status')),
+  )
   const [query, setQuery] = useState(() => searchParams.get('q') ?? '')
   const [overdueOnly, setOverdueOnly] = useState(
     () => searchParams.get('overdue') === '1',
   )
-  const [thinMarginOnly, setThinMarginOnly] = useState(false)
+  const [thinMarginOnly, setThinMarginOnly] = useState(
+    () => searchParams.get('thin') === '1',
+  )
   const [balanceDueOnly, setBalanceDueOnly] = useState(
     () => searchParams.get('balance') === '1',
   )
